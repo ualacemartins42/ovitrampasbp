@@ -24,6 +24,30 @@ export interface Database {
         }
         Relationships: []
       }
+      bairros: {
+        Row: {
+          id: string
+          nome: string
+          distrito: string
+          ativo: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          nome: string
+          distrito: string
+          ativo?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          nome?: string
+          distrito?: string
+          ativo?: boolean
+          created_at?: string
+        }
+        Relationships: []
+      }
       trap_types: {
         Row: {
           id: number
@@ -129,6 +153,17 @@ export interface Database {
           property_id: number | null
           status: 'instalada' | 'recolhida' | 'danificada' | 'perdida' | 'sem_alteracao'
           installed_at: string | null
+          neighborhood_id: number | null
+          district: string | null
+          street: string | null
+          number: string | null
+          complement: string | null
+          location_detail: string | null
+          responsible: string | null
+          block: string | null
+          area_type: 'urbana' | 'periurbana' | 'rural' | null
+          latitude: number | null
+          longitude: number | null
           created_by: string | null
           created_at: string
           updated_at: string
@@ -141,11 +176,68 @@ export interface Database {
           property_id?: number | null
           status?: 'instalada' | 'recolhida' | 'danificada' | 'perdida' | 'sem_alteracao'
           installed_at?: string | null
+          neighborhood_id?: number | null
+          district?: string | null
+          street?: string | null
+          number?: string | null
+          complement?: string | null
+          location_detail?: string | null
+          responsible?: string | null
+          block?: string | null
+          area_type?: 'urbana' | 'periurbana' | 'rural' | null
+          latitude?: number | null
+          longitude?: number | null
           created_by?: string | null
           created_at?: string
           updated_at?: string
         }
         Update: Partial<Database['public']['Tables']['traps']['Insert']>
+        Relationships: []
+      }
+      cycles: {
+        Row: {
+          id: string
+          trap_code: string
+          trap_id: number | null
+          neighborhood_name: string | null
+          status: 'instalada' | 'trocada' | 'finalizada'
+          install_at: string | null
+          install_epi_week: number | null
+          install_obs: string | null
+          swap_at: string | null
+          swap_epi_week: number | null
+          swap_situation: 'normal' | 'seca' | 'ausente' | 'danificada' | null
+          swap_obs: string | null
+          remove_at: string | null
+          remove_epi_week: number | null
+          remove_situation: 'normal' | 'seca' | 'ausente' | 'danificada' | null
+          remove_obs: string | null
+          agent_id: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          trap_code: string
+          trap_id?: number | null
+          neighborhood_name?: string | null
+          status: 'instalada' | 'trocada' | 'finalizada'
+          install_at?: string | null
+          install_epi_week?: number | null
+          install_obs?: string | null
+          swap_at?: string | null
+          swap_epi_week?: number | null
+          swap_situation?: 'normal' | 'seca' | 'ausente' | 'danificada' | null
+          swap_obs?: string | null
+          remove_at?: string | null
+          remove_epi_week?: number | null
+          remove_situation?: 'normal' | 'seca' | 'ausente' | 'danificada' | null
+          remove_obs?: string | null
+          agent_id: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['cycles']['Insert']>
         Relationships: []
       }
       collections: {
@@ -266,6 +358,9 @@ export interface Database {
       trap_status: 'instalada' | 'recolhida' | 'danificada' | 'perdida' | 'sem_alteracao'
       collection_kind: 'instalacao' | 'vistoria' | 'recolhimento'
       mosquito_species: 'aedes_aegypti' | 'aedes_albopictus' | 'culex' | 'outro' | 'nao_identificado'
+      trap_area_type: 'urbana' | 'periurbana' | 'rural'
+      cycle_status: 'instalada' | 'trocada' | 'finalizada'
+      cycle_situation: 'normal' | 'seca' | 'ausente' | 'danificada'
     }
     CompositeTypes: Record<string, never>
   }

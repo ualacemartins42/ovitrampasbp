@@ -23,7 +23,7 @@ src/
     layout/          # AppShell, badge Online/Offline, fila de sync
     ui/              # botão, campos, card, badge
   features/
-    auth/            # sessão, perfil local e modo demonstração
+    auth/            # sessão, perfil local e Modo Offline
     collections/     # persistência local das coletas
   hooks/             # status de rede e sincronização
   lib/
@@ -45,7 +45,7 @@ cp .env.example .env
 npm run dev
 ```
 
-Sem as variáveis do Supabase o app abre em **modo demonstração** (tudo local, inclusive fila de sync).
+Sem as variáveis do Supabase o app abre em **Modo Offline** (tudo local, inclusive fila de sync).
 
 ## Fluxo offline-first
 

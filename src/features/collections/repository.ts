@@ -55,9 +55,30 @@ export async function saveCollection(profile: Profile, values: CollectionFormVal
       propertyId: null,
       status: record.trapStatus,
       installedAt: record.kind === 'instalacao' ? record.occurredAt : null,
+      neighborhoodId: record.neighborhoodId,
+      district: null,
+      street: record.street,
+      number: record.number,
+      complement: record.complement,
+      locationDetail: record.referencePoint,
+      responsible: null,
+      block: null,
+      areaType: null,
+      latitude: record.latitude,
+      longitude: record.longitude,
+      syncStatus: 'pending',
     })
   } else {
-    await db.traps.update(existingTrap.id, { status: record.trapStatus })
+    await db.traps.update(existingTrap.id, {
+      status: record.trapStatus,
+      street: record.street ?? existingTrap.street,
+      number: record.number ?? existingTrap.number,
+      complement: record.complement ?? existingTrap.complement,
+      locationDetail: record.referencePoint ?? existingTrap.locationDetail,
+      neighborhoodId: record.neighborhoodId ?? existingTrap.neighborhoodId,
+      latitude: record.latitude ?? existingTrap.latitude,
+      longitude: record.longitude ?? existingTrap.longitude,
+    })
   }
 
   await enqueueSync({

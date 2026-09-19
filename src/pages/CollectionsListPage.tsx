@@ -5,7 +5,9 @@ import { Card } from '@/components/ui/card'
 import { Select } from '@/components/ui/field'
 import { useAuth } from '@/features/auth/auth-context'
 import { COLLECTION_KIND_LABELS, TRAP_STATUS_LABELS } from '@/lib/constants'
+import { neighborhoodLabelById } from '@/constants/bairros'
 import { db } from '@/lib/db'
+import { useNeighborhoods } from '@/hooks/useNeighborhoods'
 import { formatDateTime } from '@/lib/utils'
 import type { CollectionRecord, LocalSyncStatus } from '@/types/domain'
 
@@ -13,6 +15,7 @@ export function CollectionsListPage() {
   const { profile } = useAuth()
   const [items, setItems] = useState<CollectionRecord[]>([])
   const [status, setStatus] = useState<'all' | LocalSyncStatus>('all')
+  const neighborhoods = useNeighborhoods()
 
   useEffect(() => {
     const query = liveQuery(async () => {
@@ -54,6 +57,7 @@ export function CollectionsListPage() {
                 <p className="text-sm text-muted">
                   {COLLECTION_KIND_LABELS[item.kind]} · {TRAP_STATUS_LABELS[item.trapStatus]}
                 </p>
+                <p className="text-sm text-muted">{neighborhoodLabelById(neighborhoods, item.neighborhoodId)}</p>
                 <p className="text-sm text-muted">{formatDateTime(item.occurredAt)}</p>
                 {item.paddleCode ? (
                   <p className="text-sm">Palheta {item.paddleCode}</p>

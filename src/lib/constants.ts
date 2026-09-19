@@ -1,5 +1,13 @@
 export type { AppRole } from '@/types/domain'
-import type { AppRole, CollectionKind, MosquitoSpecies, TrapStatus } from '@/types/domain'
+import type {
+  AppRole,
+  CollectionKind,
+  CycleSituation,
+  CycleStatus,
+  MosquitoSpecies,
+  TrapAreaType,
+  TrapStatus,
+} from '@/types/domain'
 
 export const ROLE_LABELS: Record<AppRole, string> = {
   ace: 'Agente de Combate às Endemias',
@@ -25,9 +33,35 @@ export const TRAP_STATUS_LABELS: Record<TrapStatus, string> = {
 
 export const COLLECTION_KIND_LABELS: Record<CollectionKind, string> = {
   instalacao: 'Instalação',
-  vistoria: 'Vistoria',
-  recolhimento: 'Recolhimento de palheta',
+  vistoria: 'Vistoria / troca de palheta',
+  recolhimento: 'Retirada / recolhimento',
 }
+
+export const TRAP_AREA_LABELS: Record<TrapAreaType, string> = {
+  urbana: 'Urbana',
+  periurbana: 'Periurbana',
+  rural: 'Rural',
+}
+
+export const CYCLE_STATUS_LABELS: Record<CycleStatus, string> = {
+  instalada: 'Instalada',
+  trocada: 'Trocada',
+  finalizada: 'Finalizada',
+}
+
+export const CYCLE_STATUS_ACTION: Record<Exclude<CycleStatus, 'finalizada'>, string> = {
+  instalada: 'Aguardando troca',
+  trocada: 'Aguardando retirada',
+}
+
+export const CYCLE_SITUATION_LABELS: Record<CycleSituation, string> = {
+  normal: 'Normal (com água)',
+  seca: 'Seca',
+  ausente: 'Ausente/Perdida',
+  danificada: 'Danificada',
+}
+
+export const BARRA_DO_PIRAI_CENTER: [number, number] = [-22.4701, -43.8581]
 
 export const SPECIES_LABELS: Record<MosquitoSpecies, string> = {
   aedes_aegypti: 'Aedes aegypti',

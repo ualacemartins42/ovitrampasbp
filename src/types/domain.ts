@@ -7,6 +7,12 @@ export type TrapStatus =
   | 'perdida'
   | 'sem_alteracao'
 
+export type TrapAreaType = 'urbana' | 'periurbana' | 'rural'
+
+export type CycleStatus = 'instalada' | 'trocada' | 'finalizada'
+
+export type CycleSituation = 'normal' | 'seca' | 'ausente' | 'danificada'
+
 export type CollectionKind = 'instalacao' | 'vistoria' | 'recolhimento'
 
 export type MosquitoSpecies =
@@ -22,6 +28,16 @@ export interface Neighborhood {
   id: number
   name: string
   zone: string
+  remoteId?: string | null
+  active?: boolean
+}
+
+export interface Bairro {
+  id: string
+  nome: string
+  distrito: string
+  ativo: boolean
+  createdAt: string
 }
 
 export interface TrapType {
@@ -62,6 +78,42 @@ export interface Trap {
   propertyId: number | null
   status: TrapStatus
   installedAt: string | null
+  neighborhoodId: number | null
+  district: string | null
+  street: string | null
+  number: string | null
+  complement: string | null
+  locationDetail: string | null
+  responsible: string | null
+  block: string | null
+  areaType: TrapAreaType | null
+  latitude: number | null
+  longitude: number | null
+  syncStatus?: LocalSyncStatus
+  deletedAt?: string | null
+}
+
+export interface CycleRecord {
+  id: string
+  trapCode: string
+  trapId: number | null
+  neighborhoodName: string | null
+  status: CycleStatus
+  installAt: string | null
+  installEpiWeek: number | null
+  installObs: string | null
+  swapAt: string | null
+  swapEpiWeek: number | null
+  swapSituation: CycleSituation | null
+  swapObs: string | null
+  removeAt: string | null
+  removeEpiWeek: number | null
+  removeSituation: CycleSituation | null
+  removeObs: string | null
+  agentId: string
+  syncStatus: LocalSyncStatus
+  createdAt: string
+  updatedAt: string
 }
 
 export interface CollectionRecord {
@@ -103,7 +155,7 @@ export interface LabResult {
   syncStatus: LocalSyncStatus
 }
 
-export type SyncQueueType = 'collection' | 'photo' | 'lab_result' | 'profile'
+export type SyncQueueType = 'collection' | 'photo' | 'lab_result' | 'profile' | 'trap' | 'cycle'
 
 export interface SyncQueueItem {
   id: string

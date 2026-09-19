@@ -1,25 +1,22 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Field, Input, Select } from '@/components/ui/field'
 import { useAuth } from '@/features/auth/auth-context'
+import { NeighborhoodSelect } from '@/components/forms/NeighborhoodSelect'
+import { useNeighborhoods } from '@/hooks/useNeighborhoods'
 import { ROLE_LABELS, type AppRole } from '@/lib/constants'
-import { db, enqueueSync } from '@/lib/db'
+import { enqueueSync } from '@/lib/db'
 import { createId, nowIso } from '@/lib/utils'
-import type { Neighborhood } from '@/types/domain'
 
 export function ProfilePage() {
   const { profile, signOut, updateLocalProfile, isDemo, configured } = useAuth()
-  const [neighborhoods, setNeighborhoods] = useState<Neighborhood[]>([])
+  const neighborhoods = useNeighborhoods()
   const [fullName, setFullName] = useState(profile?.fullName ?? '')
   const [registrationNumber, setRegistrationNumber] = useState(profile?.registrationNumber ?? '')
   const [phone, setPhone] = useState(profile?.phone ?? '')
   const [neighborhoodId, setNeighborhoodId] = useState(profile?.neighborhoodId ? String(profile.neighborhoodId) : '')
-
-  useEffect(() => {
-    void db.neighborhoods.orderBy('name').toArray().then(setNeighborhoods)
-  }, [])
 
   async function save() {
     if (!profile) return
@@ -52,7 +49,7 @@ export function ProfilePage() {
       </div>
 
       {isDemo ? (
-        <Card className="text-sm text-muted">Modo demonstração: os dados não saem deste aparelho.</Card>
+        <Card className="text-sm text-muted">Modo Offline: os dados não saem deste aparelho.</Card>
       ) : null}
 
       <Field label="Nome completo">
@@ -69,7 +66,7 @@ export function ProfilePage() {
         <Input value={phone} onChange={(event) => setPhone(event.target.value)} />
       </Field>
       {isDemo ? (
-        <Field label="Papel no modo demonstração">
+        <Field label="Papel no Modo Offline">
           <Select
             value={profile?.role}
             onChange={(event) => {
@@ -87,14 +84,11 @@ export function ProfilePage() {
       ) : null}
 
       <Field label="Bairro / zona de atuação">
-        <Select value={neighborhoodId} onChange={(event) => setNeighborhoodId(event.target.value)}>
-          <option value="">Selecione</option>
-          {neighborhoods.map((item) => (
-            <option key={item.id} value={item.id}>
-              {item.name} · {item.zone}
-            </option>
-          ))}
-        </Select>
+        <NeighborhoodSelect
+          neighborhoods={neighborhoods}
+          value={neighborhoodId}
+          onChange={setNeighborhoodId}
+        />
       </Field>
 
       <Button className="w-full" onClick={() => void save()}>

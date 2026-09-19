@@ -5,7 +5,7 @@ import { useAuth } from '@/features/auth/auth-context'
 export function ProtectedLayout() {
   const { profile, loading } = useAuth()
 
-  if (loading) {
+  if (loading && !profile) {
     return (
       <div className="flex min-h-svh items-center justify-center bg-surface text-sm text-muted">
         Carregando aplicativo...

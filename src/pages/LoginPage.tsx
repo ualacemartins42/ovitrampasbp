@@ -5,15 +5,16 @@ import { Button } from '@/components/ui/button'
 import { Field, Input } from '@/components/ui/field'
 import { PasswordInput } from '@/components/ui/password-input'
 import { useAuth } from '@/features/auth/auth-context'
+import brasaoBarraDoPirai from '@/assets/brand/brasao-barra-do-pirai.png'
 
 export function LoginPage() {
-  const { profile, loading, configured, signIn, signInDemo } = useAuth()
+  const { profile, configured, signIn, signInDemo } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  if (!loading && profile) {
+  if (profile) {
     return <Navigate to="/" replace />
   }
 
@@ -78,8 +79,26 @@ export function LoginPage() {
       </form>
 
       <Button variant="secondary" className="mt-4 w-full" onClick={() => void signInDemo()}>
-        Entrar em modo demonstração (offline)
+        Entrar no Modo Offline
       </Button>
+      <div className="mt-6 flex flex-col items-center justify-center">
+        <img
+          src={brasaoBarraDoPirai}
+          alt="Brasão de Barra do Piraí"
+          className="mb-2 h-14 w-auto bg-transparent object-contain"
+        />
+        <p className="text-center text-xs text-gray-500">
+          Desenvolvido por{' '}
+          <a
+            href="https://www.lealindie.com.br/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-teal-700 hover:underline"
+          >
+            Leal Indie
+          </a>
+        </p>
+      </div>
     </div>
   )
 }

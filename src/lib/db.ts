@@ -1,6 +1,8 @@
 import Dexie, { type EntityTable } from 'dexie'
+import { BAIRROS_CATALOG_VERSION, BARRA_DO_PIRAI_BAIRROS } from '@/constants/bairros'
 import type {
   CollectionRecord,
+  CycleRecord,
   LabResult,
   LocalPhoto,
   Neighborhood,
@@ -21,6 +23,7 @@ class OvitrampasDatabase extends Dexie {
   trapTypes!: EntityTable<TrapType, 'id'>
   properties!: EntityTable<Property, 'id'>
   traps!: EntityTable<Trap, 'id'>
+  cycles!: EntityTable<CycleRecord, 'id'>
   profiles!: EntityTable<Profile, 'id'>
   collections!: EntityTable<CollectionRecord, 'id'>
   labResults!: EntityTable<LabResult, 'id'>
@@ -44,6 +47,13 @@ class OvitrampasDatabase extends Dexie {
     })
     this.version(2).stores({
       trapTypes: 'id, code, name',
+    })
+    this.version(3).stores({
+      traps: 'id, code, status, neighborhoodId, syncStatus',
+      cycles: 'id, trapCode, status, agentId, syncStatus, createdAt',
+    })
+    this.version(4).stores({
+      neighborhoods: 'id, name, zone, remoteId, active',
     })
   }
 }
@@ -73,16 +83,13 @@ export async function pendingSyncCount(): Promise<number> {
   return db.syncQueue.count()
 }
 
-const DEFAULT_NEIGHBORHOODS: Neighborhood[] = [
-  { id: 1, name: 'Centro', zone: 'Zona Central' },
-  { id: 2, name: 'Caimbé', zone: 'Zona Oeste' },
-  { id: 3, name: '13 de Setembro', zone: 'Zona Sul' },
-  { id: 4, name: 'Liberdade', zone: 'Zona Norte' },
-  { id: 5, name: 'Asa Branca', zone: 'Zona Leste' },
-  { id: 6, name: 'São Vicente', zone: 'Zona Oeste' },
-  { id: 7, name: 'Mecejana', zone: 'Zona Oeste' },
-  { id: 8, name: 'Pricumã', zone: 'Zona Norte' },
-]
+export async function seedOfficialNeighborhoods(): Promise<void> {
+  await db.transaction('rw', db.neighborhoods, db.meta, async () => {
+    await db.neighborhoods.clear()
+    await db.neighborhoods.bulkPut(BARRA_DO_PIRAI_BAIRROS)
+    await db.meta.put({ key: 'neighborhoodsCatalogVersion', value: BAIRROS_CATALOG_VERSION })
+  })
+}
 
 const DEFAULT_TRAP_TYPES: TrapType[] = [
   {
@@ -100,10 +107,13 @@ const DEFAULT_TRAP_TYPES: TrapType[] = [
 ]
 
 export async function seedReferenceDataIfEmpty(): Promise<void> {
-  await db.transaction('rw', db.neighborhoods, db.trapTypes, async () => {
-    if ((await db.neighborhoods.count()) === 0) {
-      await db.neighborhoods.bulkPut(DEFAULT_NEIGHBORHOODS)
-    }
+  const catalog = await db.meta.get('neighborhoodsCatalogVersion')
+  const count = await db.neighborhoods.count()
+  if (count === 0 || catalog?.value !== BAIRROS_CATALOG_VERSION) {
+    await seedOfficialNeighborhoods()
+  }
+
+  await db.transaction('rw', db.trapTypes, async () => {
     if ((await db.trapTypes.count()) === 0) {
       await db.trapTypes.bulkPut(DEFAULT_TRAP_TYPES)
     }

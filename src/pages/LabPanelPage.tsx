@@ -6,15 +6,17 @@ import { Card } from '@/components/ui/card'
 import { Field, Input, Select, Textarea } from '@/components/ui/field'
 import { useAuth } from '@/features/auth/auth-context'
 import { COLLECTION_KIND_LABELS, SPECIES_LABELS } from '@/lib/constants'
+import { neighborhoodLabelById } from '@/constants/bairros'
 import { db, enqueueSync } from '@/lib/db'
 import { createId, formatDateTime, nowIso } from '@/lib/utils'
-import type { CollectionRecord, LabResult, MosquitoSpecies, Neighborhood } from '@/types/domain'
+import { useNeighborhoods } from '@/hooks/useNeighborhoods'
+import type { CollectionRecord, LabResult, MosquitoSpecies } from '@/types/domain'
 
 export function LabPanelPage() {
   const { profile } = useAuth()
   const [collections, setCollections] = useState<CollectionRecord[]>([])
   const [results, setResults] = useState<LabResult[]>([])
-  const [neighborhoods, setNeighborhoods] = useState<Neighborhood[]>([])
+  const neighborhoods = useNeighborhoods()
   const [selectedId, setSelectedId] = useState('')
   const [eggCount, setEggCount] = useState('')
   const [species, setSpecies] = useState<MosquitoSpecies>('aedes_aegypti')
@@ -24,7 +26,6 @@ export function LabPanelPage() {
   useEffect(() => {
     const colSub = liveQuery(() => db.collections.orderBy('occurredAt').reverse().toArray()).subscribe(setCollections)
     const resSub = liveQuery(() => db.labResults.toArray()).subscribe(setResults)
-    void db.neighborhoods.toArray().then(setNeighborhoods)
     return () => {
       colSub.unsubscribe()
       resSub.unsubscribe()
@@ -75,7 +76,7 @@ export function LabPanelPage() {
     }
   }
 
-  const neighborhoodName = (id: number | null) => neighborhoods.find((item) => item.id === id)?.name ?? '—'
+  const neighborhoodName = (id: number | null) => neighborhoodLabelById(neighborhoods, id, '—')
 
   return (
     <div className="space-y-4">

@@ -40,7 +40,7 @@ export function useSyncQueue() {
   async function synchronize() {
     if (!profile) return
     if (!configured || isDemo) {
-      toast.message('Sincronização indisponível no modo demonstração.')
+      toast.message('Sincronização indisponível no Modo Offline.')
       return
     }
     if (!online) {

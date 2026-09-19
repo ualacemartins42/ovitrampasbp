@@ -1,5 +1,5 @@
-import { ClipboardList, FlaskConical, Home, Plus, RefreshCw, UserRound, Users } from 'lucide-react'
-import { NavLink, Outlet } from 'react-router-dom'
+import { ClipboardList, FlaskConical, Home, MapPinned, Plus, RefreshCw, UserRound, Users } from 'lucide-react'
+import { Link, NavLink, Outlet } from 'react-router-dom'
 import { BrandMark } from '@/components/brand/BrandMark'
 import { OnlineBadge } from '@/components/layout/OnlineBadge'
 import { SyncQueueIndicator } from '@/components/layout/SyncQueueIndicator'
@@ -29,6 +29,15 @@ export function AppShell() {
             </div>
           </div>
           <div className="flex shrink-0 items-center justify-end gap-2">
+            {isAdmin ? (
+              <Link
+                to="/admin/bairros"
+                className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-primary hover:bg-teal-50"
+              >
+                <MapPinned className="size-3.5" />
+                Gerenciar Bairros
+              </Link>
+            ) : null}
             <OnlineBadge />
             <SyncQueueIndicator />
           </div>

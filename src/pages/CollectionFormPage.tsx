@@ -6,19 +6,22 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Field, Input, Select, Textarea } from '@/components/ui/field'
+import { NeighborhoodSelect } from '@/components/forms/NeighborhoodSelect'
+import { neighborhoodLabelById } from '@/constants/bairros'
 import { useAuth } from '@/features/auth/auth-context'
 import { saveCollection } from '@/features/collections/repository'
 import { COLLECTION_KIND_LABELS, TRAP_STATUS_LABELS } from '@/lib/constants'
 import { db } from '@/lib/db'
 import { captureCoordinates } from '@/lib/geo'
+import { useNeighborhoods } from '@/hooks/useNeighborhoods'
 import { toDateTimeLocalValue } from '@/lib/utils'
-import type { CollectionFormValues, Neighborhood, TrapType } from '@/types/domain'
+import type { CollectionFormValues, TrapType } from '@/types/domain'
 
 export function CollectionFormPage() {
   const { profile } = useAuth()
   const navigate = useNavigate()
   const photoInputRef = useRef<HTMLInputElement>(null)
-  const [neighborhoods, setNeighborhoods] = useState<Neighborhood[]>([])
+  const neighborhoods = useNeighborhoods()
   const [trapTypes, setTrapTypes] = useState<TrapType[]>([])
   const [photo, setPhoto] = useState<Blob | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
@@ -46,7 +49,6 @@ export function CollectionFormPage() {
   })
 
   useEffect(() => {
-    void db.neighborhoods.orderBy('name').toArray().then(setNeighborhoods)
     void db.trapTypes
       .toArray()
       .then((rows) => setTrapTypes([...rows].sort((a, b) => a.id - b.id)))
@@ -148,6 +150,7 @@ export function CollectionFormPage() {
 
   const latitude = watch('latitude')
   const longitude = watch('longitude')
+  const actingAt = neighborhoodLabelById(neighborhoods, profile?.neighborhoodId, profile?.zone ?? 'Sem zona')
 
   return (
     <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
@@ -161,7 +164,7 @@ export function CollectionFormPage() {
       <Card className="space-y-1 text-sm">
         <p className="font-semibold">{profile?.fullName}</p>
         <p className="text-muted">
-          Matrícula {profile?.registrationNumber ?? '—'} · {profile?.zone ?? 'Sem zona'}
+          Matrícula {profile?.registrationNumber ?? '—'} · {actingAt}
         </p>
       </Card>
 
@@ -223,15 +226,12 @@ export function CollectionFormPage() {
         </Field>
       </div>
 
-      <Field label="Bairro">
-        <Select {...register('neighborhoodId')}>
-          <option value="">Selecione</option>
-          {neighborhoods.map((item) => (
-            <option key={item.id} value={item.id}>
-              {item.name} · {item.zone}
-            </option>
-          ))}
-        </Select>
+      <Field label="Bairro / distrito">
+        <NeighborhoodSelect
+          neighborhoods={neighborhoods}
+          value={watch('neighborhoodId')}
+          onChange={(next) => setValue('neighborhoodId', next, { shouldDirty: true, shouldValidate: true })}
+        />
       </Field>
 
       <Field label="Complemento">

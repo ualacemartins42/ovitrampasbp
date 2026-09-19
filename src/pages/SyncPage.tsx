@@ -14,6 +14,8 @@ const TYPE_LABELS: Record<SyncQueueItem['type'], string> = {
   photo: 'Foto',
   lab_result: 'Laudo',
   profile: 'Perfil',
+  trap: 'Ovitrampa',
+  cycle: 'Ciclo',
 }
 
 export function SyncPage() {

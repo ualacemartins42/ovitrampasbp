@@ -1,5 +1,5 @@
 import { liveQuery } from 'dexie'
-import { Camera, ClipboardPlus, CloudUpload } from 'lucide-react'
+import { Camera, ClipboardPlus, CloudUpload, Earth, MapPinned, RefreshCw } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
@@ -7,7 +7,9 @@ import { Card } from '@/components/ui/card'
 import { useAuth } from '@/features/auth/auth-context'
 import { useSyncQueue } from '@/hooks/useSyncQueue'
 import { COLLECTION_KIND_LABELS, ROLE_LABELS } from '@/lib/constants'
+import { neighborhoodLabelById } from '@/constants/bairros'
 import { db } from '@/lib/db'
+import { useNeighborhoods } from '@/hooks/useNeighborhoods'
 import { formatDateTime, isSameLocalDay } from '@/lib/utils'
 import type { CollectionRecord } from '@/types/domain'
 
@@ -15,6 +17,7 @@ export function HomePage() {
   const { profile, isAdmin } = useAuth()
   const { pendingCollections } = useSyncQueue()
   const [collections, setCollections] = useState<CollectionRecord[]>([])
+  const neighborhoods = useNeighborhoods()
 
   useEffect(() => {
     if (!profile) return
@@ -32,19 +35,53 @@ export function HomePage() {
         <p className="text-sm text-muted">{ROLE_LABELS[profile?.role ?? 'ace']}</p>
         <h1 className="text-xl font-semibold">Olá, {profile?.fullName?.split(' ')[0] ?? 'agente'}</h1>
         <p className="text-sm text-muted">
-          {profile?.zone ?? 'Zona não informada'}
+          {neighborhoodLabelById(neighborhoods, profile?.neighborhoodId, profile?.zone ?? 'Zona não informada')}
           {profile?.registrationNumber ? ` · Matrícula ${profile.registrationNumber}` : ''}
         </p>
       </section>
 
       {isAdmin ? (
-        <Link to="/admin/agentes" className="block">
-          <Card className="border-primary/20 bg-teal-50">
-            <p className="font-semibold text-primary">Gerenciar agentes</p>
-            <p className="text-sm text-muted">Cadastrar, editar, inativar e excluir usuários.</p>
+        <div className="grid grid-cols-2 gap-3">
+          <Link to="/admin/agentes" className="block">
+            <Card className="h-full border-primary/20 bg-teal-50">
+              <p className="font-semibold text-primary">Gerenciar agentes</p>
+              <p className="text-sm text-muted">Cadastrar, editar, inativar e excluir usuários.</p>
+            </Card>
+          </Link>
+          <Link to="/admin/bairros" className="block">
+            <Card className="h-full border-primary/20 bg-teal-50">
+              <p className="font-semibold text-primary">Gerenciar bairros</p>
+              <p className="text-sm text-muted">Distritos e localidades do município.</p>
+            </Card>
+          </Link>
+        </div>
+      ) : null}
+
+      <div className="grid grid-cols-2 gap-3">
+        <Link to="/ovitrampas" className="block">
+          <Card className="flex h-full flex-col items-center justify-center py-5 text-center">
+            <MapPinned className="mb-2 size-9 text-primary" />
+            <p className="font-semibold">Ovitrampas</p>
+            <p className="text-xs text-muted">Cadastro e endereço</p>
           </Card>
         </Link>
-      ) : null}
+        <Link to="/ciclos" className="block">
+          <Card className="flex h-full flex-col items-center justify-center py-5 text-center">
+            <RefreshCw className="mb-2 size-9 text-blue-600" />
+            <p className="font-semibold">Ciclo de instalação</p>
+            <p className="text-xs text-muted">Troca e retirada</p>
+          </Card>
+        </Link>
+        <Link to="/mapa" className="col-span-2 block">
+          <Card className="flex items-center justify-center gap-3 py-5">
+            <Earth className="size-9 text-teal-600" />
+            <div>
+              <p className="font-semibold">Mapa satélite</p>
+              <p className="text-sm text-muted">Ver armadilhas e iniciar ciclo no ponto.</p>
+            </div>
+          </Card>
+        </Link>
+      </div>
 
       <div className="grid grid-cols-2 gap-3">
         <Card>
