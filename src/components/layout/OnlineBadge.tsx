@@ -9,8 +9,8 @@ export function OnlineBadge() {
     <Badge
       className={
         online
-          ? 'bg-emerald-100 text-ok'
-          : 'bg-amber-100 text-warn'
+          ? 'whitespace-nowrap bg-emerald-100 text-ok'
+          : 'whitespace-nowrap bg-amber-100 text-warn'
       }
     >
       {online ? <Wifi className="size-3.5" aria-hidden /> : <WifiOff className="size-3.5" aria-hidden />}

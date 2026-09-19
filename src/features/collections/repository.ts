@@ -67,14 +67,5 @@ export async function saveCollection(profile: Profile, values: CollectionFormVal
     createdAt: nowIso(),
   })
 
-  if (photoId) {
-    await enqueueSync({
-      id: createId(),
-      type: 'photo',
-      payloadId: record.id,
-      createdAt: nowIso(),
-    })
-  }
-
   return record
 }

@@ -34,12 +34,13 @@ export interface TrapType {
 export interface Profile {
   id: string
   fullName: string
+  username: string | null
   registrationNumber: string | null
-  cpf: string | null
   role: AppRole
   neighborhoodId: number | null
   zone: string | null
   phone: string | null
+  isActive?: boolean
 }
 
 export interface Property {

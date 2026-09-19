@@ -14,7 +14,6 @@ export function ProfilePage() {
   const [neighborhoods, setNeighborhoods] = useState<Neighborhood[]>([])
   const [fullName, setFullName] = useState(profile?.fullName ?? '')
   const [registrationNumber, setRegistrationNumber] = useState(profile?.registrationNumber ?? '')
-  const [cpf, setCpf] = useState(profile?.cpf ?? '')
   const [phone, setPhone] = useState(profile?.phone ?? '')
   const [neighborhoodId, setNeighborhoodId] = useState(profile?.neighborhoodId ? String(profile.neighborhoodId) : '')
 
@@ -29,7 +28,6 @@ export function ProfilePage() {
       ...profile,
       fullName: fullName.trim(),
       registrationNumber: registrationNumber.trim() || null,
-      cpf: cpf.replace(/\D/g, '') || null,
       phone: phone.trim() || null,
       neighborhoodId: neighborhoodId ? Number(neighborhoodId) : null,
       zone: neighborhood?.zone ?? profile.zone,
@@ -61,10 +59,11 @@ export function ProfilePage() {
         <Input value={fullName} onChange={(event) => setFullName(event.target.value)} />
       </Field>
       <Field label="Matrícula">
-        <Input value={registrationNumber} onChange={(event) => setRegistrationNumber(event.target.value)} />
-      </Field>
-      <Field label="CPF (somente números)">
-        <Input inputMode="numeric" value={cpf} onChange={(event) => setCpf(event.target.value)} />
+        <Input
+          value={registrationNumber}
+          placeholder="MAT-12345"
+          onChange={(event) => setRegistrationNumber(event.target.value.toUpperCase())}
+        />
       </Field>
       <Field label="Telefone">
         <Input value={phone} onChange={(event) => setPhone(event.target.value)} />

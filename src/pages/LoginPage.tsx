@@ -1,8 +1,9 @@
-import { Bug } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { Navigate } from 'react-router-dom'
+import { BrandMark } from '@/components/brand/BrandMark'
 import { Button } from '@/components/ui/button'
 import { Field, Input } from '@/components/ui/field'
+import { PasswordInput } from '@/components/ui/password-input'
 import { useAuth } from '@/features/auth/auth-context'
 
 export function LoginPage() {
@@ -32,29 +33,27 @@ export function LoginPage() {
   return (
     <div className="mx-auto flex min-h-svh max-w-lg flex-col justify-center bg-surface px-6 py-10">
       <div className="mb-8 text-center">
-        <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
-          <Bug className="size-7" />
-        </div>
-        <h1 className="text-2xl font-semibold text-ink">Ovitrampas</h1>
-        <p className="mt-2 text-sm text-muted">
+        <BrandMark size="lg" className="mb-5" />
+        <h1 className="text-2xl font-semibold tracking-tight text-ink">Ovitrampas</h1>
+        <p className="mx-auto mt-2 max-w-xs text-sm text-muted">
           Coleta de campo offline-first para Agentes de Combate às Endemias.
         </p>
       </div>
 
       <form onSubmit={onSubmit} className="space-y-4 rounded-2xl border border-line bg-white p-5 shadow-sm">
-        <Field label="E-mail institucional">
+        <Field label="Usuário ou E-mail">
           <Input
-            type="email"
+            type="text"
             autoComplete="username"
             required
             value={email}
+            placeholder="harranuza.assis ou e-mail"
             onChange={(event) => setEmail(event.target.value)}
             disabled={!configured}
           />
         </Field>
         <Field label="Senha">
-          <Input
-            type="password"
+          <PasswordInput
             autoComplete="current-password"
             required
             value={password}
@@ -73,6 +72,7 @@ export function LoginPage() {
         ) : (
           <p className="text-xs text-muted">
             No primeiro acesso online o app baixa bairros, tipos de armadilha e imóveis para uso em campo.
+            Usuários sem `@` viram `nome.sobrenome@ovitrampas.local`.
           </p>
         )}
       </form>

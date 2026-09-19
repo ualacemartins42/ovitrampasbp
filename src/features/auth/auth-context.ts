@@ -3,6 +3,8 @@ import type { Profile } from '@/types/domain'
 
 export interface AuthContextValue {
   profile: Profile | null
+  email: string | null
+  isAdmin: boolean
   loading: boolean
   isDemo: boolean
   configured: boolean

@@ -6,22 +6,24 @@ import { createId, nowIso } from '@/lib/utils'
 function mapProfile(row: {
   id: string
   full_name: string
+  username: string | null
   registration_number: string | null
-  cpf: string | null
   role: Profile['role']
   neighborhood_id: number | null
   zone: string | null
   phone: string | null
+  is_active?: boolean | null
 }): Profile {
   return {
     id: row.id,
     fullName: row.full_name,
+    username: row.username ?? null,
     registrationNumber: row.registration_number,
-    cpf: row.cpf,
     role: row.role,
     neighborhoodId: row.neighborhood_id,
     zone: row.zone,
     phone: row.phone,
+    isActive: row.is_active ?? true,
   }
 }
 
@@ -263,8 +265,8 @@ async function pushProfile(profileId: string): Promise<void> {
     .from('profiles')
     .update({
       full_name: profile.fullName,
+      username: profile.username,
       registration_number: profile.registrationNumber,
-      cpf: profile.cpf,
       neighborhood_id: profile.neighborhoodId,
       zone: profile.zone,
       phone: profile.phone,
@@ -274,35 +276,62 @@ async function pushProfile(profileId: string): Promise<void> {
   if (error) throw error
 }
 
-export async function processSyncQueue(): Promise<{ processed: number; failed: number }> {
+let syncInFlight = false
+
+export async function processSyncQueue(
+  options: { retryErrors?: boolean; agentId?: string } = {},
+): Promise<{ processed: number; failed: number }> {
+  if (syncInFlight) {
+    return { processed: 0, failed: 0 }
+  }
   if (!navigator.onLine || !isSupabaseConfigured() || !supabase) {
     return { processed: 0, failed: 0 }
   }
 
-  const items = await db.syncQueue.orderBy('createdAt').toArray()
+  syncInFlight = true
   let processed = 0
   let failed = 0
 
-  for (const item of items) {
-    try {
-      await db.syncQueue.update(item.id, { status: 'processing' })
+  try {
+    const items = await db.syncQueue.orderBy('createdAt').toArray()
+
+    for (const item of items) {
+      if (item.status === 'processing') continue
+      if (item.status === 'error' && !options.retryErrors) continue
+
       if (item.type === 'collection' || item.type === 'photo') {
-        await pushCollection(item.payloadId)
-      } else if (item.type === 'lab_result') {
-        await pushLabResult(item.payloadId)
-      } else if (item.type === 'profile') {
-        await pushProfile(item.payloadId)
+        const collection = await db.collections.get(item.payloadId)
+        if (options.agentId && collection && collection.agentId !== options.agentId) {
+          continue
+        }
       }
-      await db.syncQueue.delete(item.id)
-      processed += 1
-    } catch (error) {
-      failed += 1
-      await db.syncQueue.update(item.id, {
-        status: 'error',
-        attempts: item.attempts + 1,
-        lastError: error instanceof Error ? error.message : 'Falha ao sincronizar',
-      })
+
+      try {
+        await db.syncQueue.update(item.id, { status: 'processing' })
+        if (item.type === 'collection' || item.type === 'photo') {
+          await pushCollection(item.payloadId)
+          const collection = await db.collections.get(item.payloadId)
+          if (collection) {
+            await db.collections.update(collection.id, { syncStatus: 'synced' })
+          }
+        } else if (item.type === 'lab_result') {
+          await pushLabResult(item.payloadId)
+        } else if (item.type === 'profile') {
+          await pushProfile(item.payloadId)
+        }
+        await db.syncQueue.delete(item.id)
+        processed += 1
+      } catch (error) {
+        failed += 1
+        await db.syncQueue.update(item.id, {
+          status: 'error',
+          attempts: item.attempts + 1,
+          lastError: error instanceof Error ? error.message : 'Falha ao sincronizar',
+        })
+      }
     }
+  } finally {
+    syncInFlight = false
   }
 
   return { processed, failed }
@@ -323,9 +352,29 @@ export async function pullRemoteData(profile: Profile): Promise<void> {
 }
 
 export async function syncAll(profile: Profile): Promise<{ processed: number; failed: number }> {
-  const result = await processSyncQueue()
+  const result = await processSyncQueue({ retryErrors: true, agentId: profile.id })
   await pullRemoteData(profile)
   return result
+}
+
+let autoSyncTimer: number | null = null
+let getProfileForSync: () => Profile | null = () => null
+let getIsDemoForSync: () => boolean = () => true
+
+export function startBackgroundSync(getProfile: () => Profile | null, isDemo: () => boolean): void {
+  getProfileForSync = getProfile
+  getIsDemoForSync = isDemo
+  if (autoSyncTimer != null || typeof window === 'undefined') return
+
+  const tick = () => {
+    const profile = getProfileForSync()
+    if (!profile || getIsDemoForSync() || !navigator.onLine) return
+    void processSyncQueue({ retryErrors: false, agentId: profile.id })
+  }
+
+  autoSyncTimer = window.setInterval(tick, 15000)
+  window.addEventListener('online', tick)
+  tick()
 }
 
 export async function cacheProfile(profile: Profile): Promise<void> {

@@ -1,6 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
-import { ProtectedLayout, StaffOutlet } from '@/components/layout/ProtectedLayout'
+import { AdminOutlet, ProtectedLayout, StaffOutlet } from '@/components/layout/ProtectedLayout'
 import { AppProviders } from '@/features/auth/AuthProvider'
+import { AgentesPage } from '@/pages/admin/AgentesPage'
 import { CollectionFormPage } from '@/pages/CollectionFormPage'
 import { CollectionsListPage } from '@/pages/CollectionsListPage'
 import { HomePage } from '@/pages/HomePage'
@@ -23,6 +24,9 @@ export default function App() {
             <Route path="/perfil" element={<ProfilePage />} />
             <Route element={<StaffOutlet />}>
               <Route path="/laboratorio" element={<LabPanelPage />} />
+            </Route>
+            <Route element={<AdminOutlet />}>
+              <Route path="/admin/agentes" element={<AgentesPage />} />
             </Route>
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />

@@ -1,5 +1,6 @@
-import { ClipboardList, FlaskConical, Home, Plus, RefreshCw, UserRound } from 'lucide-react'
+import { ClipboardList, FlaskConical, Home, Plus, RefreshCw, UserRound, Users } from 'lucide-react'
 import { NavLink, Outlet } from 'react-router-dom'
+import { BrandMark } from '@/components/brand/BrandMark'
 import { OnlineBadge } from '@/components/layout/OnlineBadge'
 import { SyncQueueIndicator } from '@/components/layout/SyncQueueIndicator'
 import { useAuth } from '@/features/auth/auth-context'
@@ -13,18 +14,21 @@ const navClass = ({ isActive }: { isActive: boolean }) =>
   )
 
 export function AppShell() {
-  const { profile } = useAuth()
+  const { profile, isAdmin } = useAuth()
   const staff = isStaffRole(profile?.role)
 
   return (
     <div className="mx-auto flex min-h-svh max-w-lg flex-col bg-surface">
       <header className="sticky top-0 z-20 border-b border-line bg-white/95 px-4 py-3 backdrop-blur">
         <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-primary">SMS · Ovitrampas</p>
-            <p className="text-sm text-muted">{profile?.fullName ?? 'Agente'}</p>
+          <div className="flex min-w-0 items-center gap-3">
+            <BrandMark size="sm" className="mx-0 shrink-0" />
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-wide text-primary">SMS · Ovitrampas</p>
+              <p className="truncate text-sm text-muted">{profile?.fullName ?? 'Agente'}</p>
+            </div>
           </div>
-          <div className="flex flex-wrap items-center justify-end gap-2">
+          <div className="flex shrink-0 items-center justify-end gap-2">
             <OnlineBadge />
             <SyncQueueIndicator />
           </div>
@@ -51,7 +55,12 @@ export function AppShell() {
             </span>
             Nova
           </NavLink>
-          {staff ? (
+          {isAdmin ? (
+            <NavLink to="/admin/agentes" className={navClass}>
+              <Users className="size-5" />
+              Usuários
+            </NavLink>
+          ) : staff ? (
             <NavLink to="/laboratorio" className={navClass}>
               <FlaskConical className="size-5" />
               Lab

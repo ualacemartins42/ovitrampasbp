@@ -12,8 +12,8 @@ import { formatDateTime, isSameLocalDay } from '@/lib/utils'
 import type { CollectionRecord } from '@/types/domain'
 
 export function HomePage() {
-  const { profile } = useAuth()
-  const { pending } = useSyncQueue()
+  const { profile, isAdmin } = useAuth()
+  const { pendingCollections } = useSyncQueue()
   const [collections, setCollections] = useState<CollectionRecord[]>([])
 
   useEffect(() => {
@@ -37,6 +37,15 @@ export function HomePage() {
         </p>
       </section>
 
+      {isAdmin ? (
+        <Link to="/admin/agentes" className="block">
+          <Card className="border-primary/20 bg-teal-50">
+            <p className="font-semibold text-primary">Gerenciar agentes</p>
+            <p className="text-sm text-muted">Cadastrar, editar, inativar e excluir usuários.</p>
+          </Card>
+        </Link>
+      ) : null}
+
       <div className="grid grid-cols-2 gap-3">
         <Card>
           <p className="text-xs text-muted">Coletas de hoje</p>
@@ -44,7 +53,7 @@ export function HomePage() {
         </Card>
         <Card>
           <p className="text-xs text-muted">Aguardando envio</p>
-          <p className="mt-1 text-3xl font-semibold text-warn">{pending}</p>
+          <p className="mt-1 text-3xl font-semibold tabular-nums text-warn">{pendingCollections}</p>
         </Card>
       </div>
 
@@ -55,13 +64,16 @@ export function HomePage() {
         </Button>
       </Link>
 
-      {pending > 0 ? (
+      {pendingCollections > 0 ? (
         <Link to="/sincronizar" className="block">
           <Card className="flex items-center gap-3 border-amber-200 bg-amber-50">
-            <CloudUpload className="size-5 text-warn" />
+            <CloudUpload className="size-5 shrink-0 text-warn" />
             <div>
               <p className="font-semibold text-ink">
-                {pending} {pending === 1 ? 'coleta aguardando sincronização' : 'coletas aguardando sincronização'}
+                {pendingCollections}{' '}
+                {pendingCollections === 1
+                  ? 'coleta aguardando sincronização'
+                  : 'coletas aguardando sincronização'}
               </p>
               <p className="text-sm text-muted">Os dados já estão salvos neste aparelho.</p>
             </div>

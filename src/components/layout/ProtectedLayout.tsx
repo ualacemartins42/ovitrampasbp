@@ -29,3 +29,11 @@ export function StaffOutlet() {
   }
   return <Outlet />
 }
+
+export function AdminOutlet() {
+  const { isAdmin } = useAuth()
+  if (!isAdmin) {
+    return <Navigate to="/" replace />
+  }
+  return <Outlet />
+}

@@ -70,7 +70,7 @@ export async function enqueueSync(item: Omit<SyncQueueItem, 'attempts' | 'lastEr
 }
 
 export async function pendingSyncCount(): Promise<number> {
-  return db.syncQueue.filter((item) => item.status !== 'processing').count()
+  return db.syncQueue.count()
 }
 
 const DEFAULT_NEIGHBORHOODS: Neighborhood[] = [

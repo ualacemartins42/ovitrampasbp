@@ -53,11 +53,12 @@ export interface Database {
           id: string
           full_name: string
           registration_number: string | null
-          cpf: string | null
           role: 'ace' | 'lab' | 'supervisor' | 'admin'
           neighborhood_id: number | null
           zone: string | null
+          username: string | null
           phone: string | null
+          is_active: boolean
           created_at: string
           updated_at: string
         }
@@ -65,11 +66,12 @@ export interface Database {
           id: string
           full_name: string
           registration_number?: string | null
-          cpf?: string | null
           role?: 'ace' | 'lab' | 'supervisor' | 'admin'
           neighborhood_id?: number | null
           zone?: string | null
+          username?: string | null
           phone?: string | null
+          is_active?: boolean
           created_at?: string
           updated_at?: string
         }
@@ -77,11 +79,12 @@ export interface Database {
           id?: string
           full_name?: string
           registration_number?: string | null
-          cpf?: string | null
           role?: 'ace' | 'lab' | 'supervisor' | 'admin'
           neighborhood_id?: number | null
           zone?: string | null
+          username?: string | null
           phone?: string | null
+          is_active?: boolean
           created_at?: string
           updated_at?: string
         }
