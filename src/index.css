@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Segoe UI", system-ui, sans-serif;
+  --color-primary: #0f766e;
+  --color-primary-foreground: #f0fdfa;
+  --color-ink: #134e4a;
+  --color-muted: #5b6b68;
+  --color-surface: #f4f7f6;
+  --color-card: #ffffff;
+  --color-line: #d7e3df;
+  --color-danger: #b91c1c;
+  --color-warn: #b45309;
+  --color-ok: #047857;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-tap-highlight-color: transparent;
+}
+
+#root {
+  min-height: 100svh;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
