@@ -48,6 +48,17 @@ export function addDays(date: Date, days: number): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days)
 }
 
+export function addDaysToDateInput(value: string, days: number, fallback = new Date()): string {
+  return toDateInputValue(addDays(parseDateInput(value) ?? fallback, days))
+}
+
+export function isDateInputBefore(value: string, other: string): boolean {
+  const left = parseDateInput(value)
+  const right = parseDateInput(other)
+  if (!left || !right) return false
+  return left.getTime() < right.getTime()
+}
+
 export function toDateInputValue(date: Date): string {
   const pad = (value: number) => String(value).padStart(2, '0')
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`

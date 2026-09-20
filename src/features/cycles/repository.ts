@@ -20,18 +20,21 @@ export interface CycleFormValues {
   swapDate: string
   swapSituation: CycleSituation | ''
   swapObs: string
+  removeDate: string
   removeSituation: CycleSituation | ''
   removeObs: string
 }
 
 function occurredFromDateInput(value: string | undefined): { iso: string; week: number | null } {
-  const parsed = value ? parseDateInput(value) : null
-  if (value && !parsed) {
+  if (!value) {
+    const now = new Date()
+    return { iso: now.toISOString(), week: epidemiologicalWeek(now) }
+  }
+  const parsed = parseDateInput(value)
+  if (!parsed) {
     throw new Error('Informe uma data válida.')
   }
-  const iso = parsed ? dateInputToIso(value) : new Date().toISOString()
-  const date = parsed ?? new Date()
-  return { iso, week: epidemiologicalWeek(date) }
+  return { iso: dateInputToIso(value), week: epidemiologicalWeek(parsed) }
 }
 
 export async function activeCycles(): Promise<CycleRecord[]> {
@@ -111,6 +114,7 @@ export async function saveCycleStage(
   } else if (cycle.status === 'trocada') {
     kind = 'recolhimento'
     trapStatus = values.removeSituation === 'normal' ? 'recolhida' : situationToTrapStatus(values.removeSituation)
+    ;({ iso: occurredAt, week } = occurredFromDateInput(values.removeDate))
     cycle = {
       ...cycle,
       status: 'finalizada',

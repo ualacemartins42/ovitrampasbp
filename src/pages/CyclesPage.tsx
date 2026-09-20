@@ -1,5 +1,5 @@
 import { liveQuery } from 'dexie'
-import { Box, ChevronRight, Plus, RefreshCw } from 'lucide-react'
+import { Box, ChevronRight, FileBarChart, Plus, RefreshCw } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
@@ -23,6 +23,10 @@ export function CyclesPage() {
       <div>
         <h1 className="text-xl font-semibold">Ciclos em andamento</h1>
         <p className="text-sm text-muted">Instalação, troca de palheta e retirada da mesma armadilha.</p>
+        <Link to="/relatorios" className="mt-1 inline-flex items-center gap-1 text-sm font-semibold text-primary">
+          <FileBarChart className="size-3.5" />
+          Ver ciclos concluídos
+        </Link>
       </div>
       {active.length === 0 ? (
         <Card className="text-sm text-muted">Nenhum ciclo aberto. Inicie uma nova instalação.</Card>

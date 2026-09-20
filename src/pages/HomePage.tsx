@@ -1,5 +1,5 @@
 import { liveQuery } from 'dexie'
-import { Camera, ClipboardPlus, CloudUpload, Earth, MapPinned, RefreshCw } from 'lucide-react'
+import { Camera, ClipboardPlus, CloudUpload, Earth, FileBarChart, MapPinned, RefreshCw } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
@@ -70,6 +70,15 @@ export function HomePage() {
             <RefreshCw className="mb-2 size-9 text-blue-600" />
             <p className="font-semibold">Ciclo de instalação</p>
             <p className="text-xs text-muted">Troca e retirada</p>
+          </Card>
+        </Link>
+        <Link to="/relatorios" className="col-span-2 block">
+          <Card className="flex items-center justify-center gap-3 py-5">
+            <FileBarChart className="size-9 text-teal-700" />
+            <div>
+              <p className="font-semibold">Relatórios</p>
+              <p className="text-sm text-muted">Ciclos concluídos para laboratório e vigilância.</p>
+            </div>
           </Card>
         </Link>
         <Link to="/mapa" className="col-span-2 block">

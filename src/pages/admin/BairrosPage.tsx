@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/field'
 import { formatNeighborhoodLabel, districtGroupLabel } from '@/constants/bairros'
 import { useAuth } from '@/features/auth/auth-context'
+import { foldSearchText } from '@/lib/utils'
 import {
   createBairro,
   deleteBairro,
@@ -45,9 +46,13 @@ export function BairrosPage() {
   }
 
   const filtered = useMemo(() => {
-    const term = query.trim().toLowerCase()
+    const term = foldSearchText(query)
     const source = term
-      ? bairros.filter((item) => `${item.nome} ${item.distrito}`.toLowerCase().includes(term))
+      ? bairros.filter((item) => {
+          const nome = foldSearchText(item.nome)
+          const distrito = foldSearchText(item.distrito)
+          return nome.includes(term) || distrito.includes(term)
+        })
       : bairros
 
     const groups = new Map<string, Bairro[]>()

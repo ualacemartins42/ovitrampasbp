@@ -1,4 +1,4 @@
-import { ClipboardList, FlaskConical, Home, MapPinned, Plus, RefreshCw, UserRound, Users } from 'lucide-react'
+import { ClipboardList, FileBarChart, FlaskConical, Home, MapPinned, Plus, RefreshCw, UserRound, Users } from 'lucide-react'
 import { Link, NavLink, Outlet } from 'react-router-dom'
 import { BrandMark } from '@/components/brand/BrandMark'
 import { OnlineBadge } from '@/components/layout/OnlineBadge'
@@ -29,13 +29,20 @@ export function AppShell() {
             </div>
           </div>
           <div className="flex shrink-0 items-center justify-end gap-2">
+            <Link
+              to="/relatorios"
+              className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-primary hover:bg-teal-50"
+            >
+              <FileBarChart className="size-3.5" />
+              Relatórios
+            </Link>
             {isAdmin ? (
               <Link
                 to="/admin/bairros"
                 className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-primary hover:bg-teal-50"
               >
                 <MapPinned className="size-3.5" />
-                Gerenciar Bairros
+                Bairros
               </Link>
             ) : null}
             <OnlineBadge />
@@ -49,7 +56,7 @@ export function AppShell() {
       </main>
 
       <nav className="fixed inset-x-0 bottom-0 z-20 mx-auto max-w-lg border-t border-line bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
-        <div className="grid grid-cols-5 py-2">
+        <div className="grid grid-cols-6 py-2">
           <NavLink to="/" end className={navClass}>
             <Home className="size-5" />
             Início
@@ -63,6 +70,10 @@ export function AppShell() {
               <Plus className="size-5" />
             </span>
             Nova
+          </NavLink>
+          <NavLink to="/relatorios" className={navClass}>
+            <FileBarChart className="size-5" />
+            Relatórios
           </NavLink>
           {isAdmin ? (
             <NavLink to="/admin/agentes" className={navClass}>

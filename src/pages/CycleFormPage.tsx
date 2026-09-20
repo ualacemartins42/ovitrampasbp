@@ -11,7 +11,7 @@ import { formatNeighborhoodLabel } from '@/constants/bairros'
 import { db } from '@/lib/db'
 import { epidemiologicalWeekLabel } from '@/lib/epiWeek'
 import { useNeighborhoods } from '@/hooks/useNeighborhoods'
-import { addDays, isoToDateInput, parseDateInput, toDateInputValue } from '@/lib/utils'
+import { addDaysToDateInput, isDateInputBefore, isoToDateInput, parseDateInput, toDateInputValue } from '@/lib/utils'
 import type { CycleRecord, CycleSituation, Trap } from '@/types/domain'
 
 export function CycleFormPage() {
@@ -26,18 +26,19 @@ export function CycleFormPage() {
   const [neighborhoodName, setNeighborhoodName] = useState('')
   const [installObs, setInstallObs] = useState('')
   const [installDate, setInstallDate] = useState(() => toDateInputValue(new Date()))
-  const [swapDate, setSwapDate] = useState(() => toDateInputValue(addDays(new Date(), 6)))
+  const [swapDate, setSwapDate] = useState(() => addDaysToDateInput(toDateInputValue(new Date()), 6))
   const [swapSituation, setSwapSituation] = useState<CycleSituation | ''>('')
   const [swapObs, setSwapObs] = useState('')
+  const [removeDate, setRemoveDate] = useState(() => addDaysToDateInput(toDateInputValue(new Date()), 12))
   const [removeSituation, setRemoveSituation] = useState<CycleSituation | ''>('')
   const [removeObs, setRemoveObs] = useState('')
   const [saving, setSaving] = useState(false)
 
   const today = useMemo(() => new Date(), [])
-  const todayLabel = toDateInputValue(today)
-  const todayWeek = epidemiologicalWeekLabel(today)
   const installWeek = epidemiologicalWeekLabel(parseDateInput(installDate) ?? today)
   const swapWeek = epidemiologicalWeekLabel(parseDateInput(swapDate) ?? today)
+  const removeWeek = epidemiologicalWeekLabel(parseDateInput(removeDate) ?? today)
+  const removeDateBeforeSwap = Boolean(swapDate && removeDate && isDateInputBefore(removeDate, swapDate))
 
   useEffect(() => {
     void db.traps.orderBy('code').toArray().then((rows) => setTraps(rows.filter((item) => !item.deletedAt)))
@@ -56,13 +57,13 @@ export function CycleFormPage() {
       setNeighborhoodName(row.neighborhoodName ?? '')
       setInstallDate(isoToDateInput(row.installAt))
       setInstallObs(row.installObs ?? '')
-      setSwapDate(
-        row.swapAt
-          ? isoToDateInput(row.swapAt)
-          : toDateInputValue(addDays(row.installAt ? new Date(row.installAt) : new Date(), 6)),
-      )
+      const nextSwapDate = row.swapAt
+        ? isoToDateInput(row.swapAt)
+        : addDaysToDateInput(isoToDateInput(row.installAt), 6)
+      setSwapDate(nextSwapDate)
       setSwapSituation(row.swapSituation ?? '')
       setSwapObs(row.swapObs ?? '')
+      setRemoveDate(row.removeAt ? isoToDateInput(row.removeAt) : addDaysToDateInput(nextSwapDate, 6))
       setRemoveSituation(row.removeSituation ?? '')
       setRemoveObs(row.removeObs ?? '')
     })
@@ -82,12 +83,17 @@ export function CycleFormPage() {
   const title = isNew ? 'Nova instalação' : registeringSwap ? 'Registrar troca' : 'Registrar retirada'
   const canEditInstallDate = isNew || registeringSwap
   const canEditSwapDate = registeringSwap
+  const canEditRemoveDate = registeringRemove
 
   useEffect(() => {
     if (!canEditSwapDate) return
-    const base = parseDateInput(installDate) ?? today
-    setSwapDate(toDateInputValue(addDays(base, 6)))
+    setSwapDate(addDaysToDateInput(installDate, 6, today))
   }, [installDate, canEditSwapDate, today])
+
+  useEffect(() => {
+    if (!canEditRemoveDate) return
+    setRemoveDate(addDaysToDateInput(swapDate, 6, today))
+  }, [swapDate, canEditRemoveDate, today])
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault()
@@ -104,6 +110,14 @@ export function CycleFormPage() {
       toast.error('Informe a data da troca.')
       return
     }
+    if (registeringRemove && !parseDateInput(removeDate)) {
+      toast.error('Informe a data da retirada.')
+      return
+    }
+    if (registeringRemove && isDateInputBefore(removeDate, swapDate)) {
+      toast.error('A data de retirada não pode ser anterior à data da troca.')
+      return
+    }
     if (registeringRemove && !removeSituation) {
       toast.error('Informe a situação encontrada na retirada.')
       return
@@ -118,6 +132,7 @@ export function CycleFormPage() {
         swapDate,
         swapSituation,
         swapObs,
+        removeDate,
         removeSituation,
         removeObs,
       })
@@ -214,7 +229,7 @@ export function CycleFormPage() {
               <Input
                 type="date"
                 readOnly={!canEditSwapDate}
-                className="bg-white"
+                className={canEditSwapDate ? 'bg-white' : 'bg-surface'}
                 value={swapDate}
                 onChange={(event) => setSwapDate(event.target.value)}
               />
@@ -257,10 +272,22 @@ export function CycleFormPage() {
           <h2 className="border-b border-orange-200 pb-1 font-semibold text-orange-900">3. Retirada</h2>
           <div className="grid grid-cols-2 gap-2">
             <Field label="Data retirada">
-              <Input type="date" readOnly className="bg-white" value={todayLabel} />
+              <Input
+                type="date"
+                required={canEditRemoveDate}
+                readOnly={!canEditRemoveDate}
+                min={swapDate || undefined}
+                className={canEditRemoveDate ? 'bg-white' : 'bg-surface'}
+                value={removeDate}
+                onChange={(event) => setRemoveDate(event.target.value)}
+                aria-invalid={removeDateBeforeSwap}
+              />
+              {removeDateBeforeSwap ? (
+                <p className="mt-1 text-xs text-danger">A retirada não pode ser anterior à data da troca.</p>
+              ) : null}
             </Field>
             <Field label="Semana epi.">
-              <Input readOnly className="bg-white font-semibold text-danger" value={todayWeek} />
+              <Input readOnly className="bg-white font-semibold text-danger" value={removeWeek} />
             </Field>
           </div>
           <Field label="Situação encontrada">
@@ -283,7 +310,7 @@ export function CycleFormPage() {
       ) : null}
 
       <div className="flex gap-2">
-        <Button type="submit" className="flex-1" disabled={saving}>
+        <Button type="submit" className="flex-1" disabled={saving || (registeringRemove && removeDateBeforeSwap)}>
           {saving ? 'Salvando...' : 'Salvar etapa'}
         </Button>
         {cycle ? (

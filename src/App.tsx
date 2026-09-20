@@ -12,6 +12,7 @@ import { LabPanelPage } from '@/pages/LabPanelPage'
 import { LoginPage } from '@/pages/LoginPage'
 import { MapPage } from '@/pages/MapPage'
 import { ProfilePage } from '@/pages/ProfilePage'
+import { RelatoriosPage } from '@/pages/RelatoriosPage'
 import { SyncPage } from '@/pages/SyncPage'
 import { TrapFormPage } from '@/pages/TrapFormPage'
 import { TrapsPage } from '@/pages/TrapsPage'
@@ -29,7 +30,9 @@ export default function App() {
             <Route path="/ovitrampas/:code" element={<TrapFormPage />} />
             <Route path="/ciclos" element={<CyclesPage />} />
             <Route path="/ciclos/novo" element={<CycleFormPage />} />
+            <Route path="/ciclos/concluidos" element={<Navigate to="/relatorios" replace />} />
             <Route path="/ciclos/:id" element={<CycleFormPage />} />
+            <Route path="/relatorios" element={<RelatoriosPage />} />
             <Route path="/mapa" element={<MapPage />} />
             <Route path="/coletas" element={<CollectionsListPage />} />
             <Route path="/coletas/nova" element={<CollectionFormPage />} />

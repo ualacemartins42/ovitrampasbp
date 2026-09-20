@@ -1,3 +1,10 @@
+export function googleMapsUrl(latitude: number, longitude: number, satellite = true): string {
+  if (satellite) {
+    return `https://www.google.com/maps/@?api=1&map_action=map&center=${latitude},${longitude}&zoom=18&basemap=satellite`
+  }
+  return `https://www.google.com/maps?q=${latitude},${longitude}`
+}
+
 export async function captureCoordinates(): Promise<{ latitude: number; longitude: number; accuracy: number }> {
   return new Promise((resolve, reject) => {
     if (!('geolocation' in navigator)) {

@@ -458,6 +458,15 @@ async function pullCycles(): Promise<void> {
   }
 }
 
+async function pullProfiles(): Promise<void> {
+  if (!supabase) return
+  const { data, error } = await supabase.from('profiles').select('*')
+  if (error) throw error
+  for (const row of data ?? []) {
+    await db.profiles.put(mapProfile(row))
+  }
+}
+
 async function pushProfile(profileId: string): Promise<void> {
   if (!supabase) throw new Error('Supabase não configurado')
   const profile = await db.profiles.get(profileId)
@@ -553,6 +562,7 @@ export async function pullRemoteData(profile: Profile): Promise<void> {
     pullReferenceTables(),
     pullCollections(profile.id, profile.role !== 'ace'),
     pullCycles(),
+    pullProfiles(),
     profile.role === 'ace' ? Promise.resolve() : pullLabResults(),
   ])
   await db.meta.put({ key: 'lastPullAt', value: nowIso() })
