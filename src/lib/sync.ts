@@ -1,8 +1,7 @@
 import { db, enqueueSync, seedOfficialNeighborhoods, seedReferenceDataIfEmpty } from '@/lib/db'
-import { BARRA_DO_PIRAI_BAIRROS } from '@/constants/bairros'
-import { cacheBairrosLocally } from '@/services/bairroService'
+import { cacheBairrosLocally, cacheNeighborhoodsFromRemote } from '@/services/bairroService'
 import { isSupabaseConfigured, supabase } from '@/lib/supabase'
-import type { CollectionRecord, CycleRecord, LabResult, Neighborhood, Profile, Property, Trap, TrapType } from '@/types/domain'
+import type { CollectionRecord, CycleRecord, LabResult, Profile, Property, Trap, TrapType } from '@/types/domain'
 import { createId, nowIso } from '@/lib/utils'
 
 function mapProfile(row: {
@@ -133,43 +132,31 @@ async function pullReferenceTables(): Promise<void> {
   if (traps.error) throw traps.error
 
   const remoteBairros = bairros.error ? [] : (bairros.data ?? [])
-  if (remoteBairros.length > 0) {
-    await cacheBairrosLocally(
-      remoteBairros.map((row) => ({
-        id: row.id,
-        nome: row.nome,
-        distrito: row.distrito,
-        ativo: row.ativo,
-        createdAt: row.created_at,
-      })),
-    )
+  const remoteNeighborhoods = neighborhoods.error ? [] : (neighborhoods.data ?? [])
+  const mappedBairros = remoteBairros.map((row) => ({
+    id: row.id,
+    nome: row.nome,
+    distrito: row.distrito,
+    ativo: row.ativo,
+    createdAt: row.created_at,
+  }))
+
+  if (remoteNeighborhoods.length > 0) {
+    await cacheNeighborhoodsFromRemote(remoteNeighborhoods, mappedBairros)
+  } else if (mappedBairros.length > 0) {
+    await cacheBairrosLocally(mappedBairros)
+  } else {
+    await seedOfficialNeighborhoods()
   }
 
   const localTraps = await db.traps.toArray()
   const pendingTraps = localTraps.filter((item) => item.syncStatus === 'pending' || item.syncStatus === 'error')
   const pendingCodes = new Set(pendingTraps.map((item) => item.code))
-  const remoteNeighborhoods = neighborhoods.error ? [] : (neighborhoods.data ?? [])
-  const useLegacyNeighborhoods = remoteBairros.length === 0 && remoteNeighborhoods.length >= BARRA_DO_PIRAI_BAIRROS.length
 
-  await db.transaction('rw', db.neighborhoods, db.trapTypes, db.properties, db.traps, async () => {
-    if (useLegacyNeighborhoods) {
-      await db.neighborhoods.clear()
-    }
+  await db.transaction('rw', db.trapTypes, db.properties, db.traps, async () => {
     await db.trapTypes.clear()
     await db.properties.clear()
 
-    if (useLegacyNeighborhoods) {
-      await db.neighborhoods.bulkAdd(
-        remoteNeighborhoods.map(
-          (row): Neighborhood => ({
-            id: row.id,
-            name: row.name,
-            zone: row.zone,
-            active: true,
-          }),
-        ),
-      )
-    }
     await db.trapTypes.bulkAdd(
       (trapTypes.data ?? []).map(
         (row): TrapType => ({
@@ -203,10 +190,6 @@ async function pullReferenceTables(): Promise<void> {
       await db.traps.put(pending)
     }
   })
-
-  if (remoteBairros.length === 0 && !useLegacyNeighborhoods) {
-    await seedOfficialNeighborhoods()
-  }
 }
 
 async function pullCollections(agentId: string, isStaff: boolean): Promise<void> {

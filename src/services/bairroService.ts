@@ -1,7 +1,7 @@
-import { BARRA_DO_PIRAI_BAIRROS, BARRA_DO_PIRAI_DISTRITO_OPTIONS } from '@/constants/bairros'
+import { BAIRROS_CATALOG_VERSION, BARRA_DO_PIRAI_BAIRROS, BARRA_DO_PIRAI_DISTRITO_OPTIONS } from '@/constants/bairros'
 import { db } from '@/lib/db'
 import { supabase } from '@/lib/supabase'
-import { createId, nowIso } from '@/lib/utils'
+import { createId, foldSearchText, nowIso } from '@/lib/utils'
 import type { Bairro, Neighborhood } from '@/types/domain'
 
 export interface BairroFormValues {
@@ -39,29 +39,93 @@ export function bairroFromNeighborhood(neighborhood: Neighborhood): Bairro {
   }
 }
 
-export async function cacheBairrosLocally(bairros: Bairro[]): Promise<Neighborhood[]> {
-  const local = await db.neighborhoods.toArray()
-  const byRemote = new Map(local.filter((item) => item.remoteId).map((item) => [item.remoteId as string, item]))
-  const byName = new Map(local.map((item) => [`${item.name.trim().toLowerCase()}|${item.zone.trim().toLowerCase()}`, item]))
-  let nextId = Math.max(0, ...local.map((item) => item.id), ...BARRA_DO_PIRAI_BAIRROS.map((item) => item.id)) + 1
+function foldName(value: string): string {
+  return foldSearchText(value).replace(/['’`]/g, '')
+}
 
-  const rows: Neighborhood[] = bairros.map((bairro) => {
-    const key = `${bairro.nome.trim().toLowerCase()}|${bairro.distrito.trim().toLowerCase()}`
-    const existing = byRemote.get(bairro.id) ?? byName.get(key)
-    const id = existing?.id ?? nextId++
-    return neighborhoodFromBairro(bairro, id)
+/** IDs must match public.neighborhoods.id because traps.neighborhood_id is an FK to that table. */
+export function mergeNeighborhoodCatalog(
+  remoteNeighborhoods: Array<{ id: number; name: string; zone: string }>,
+  bairros: Bairro[] = [],
+): Neighborhood[] {
+  const bairroByName = new Map<string, Bairro>()
+  for (const bairro of bairros) {
+    bairroByName.set(foldName(bairro.nome), bairro)
+  }
+
+  const usedNames = new Set<string>()
+  const rows: Neighborhood[] = remoteNeighborhoods.map((row) => {
+    const key = foldName(row.name)
+    const bairro = bairroByName.get(key)
+    if (bairro) usedNames.add(key)
+    return {
+      id: row.id,
+      name: row.name,
+      zone: row.zone,
+      remoteId: bairro?.id ?? null,
+      active: bairro?.ativo ?? true,
+    }
   })
 
+  let nextId = Math.max(0, ...rows.map((row) => row.id)) + 1
+  for (const bairro of bairros) {
+    const key = foldName(bairro.nome)
+    if (usedNames.has(key)) continue
+    rows.push(neighborhoodFromBairro(bairro, nextId))
+    nextId += 1
+  }
+
+  return rows
+}
+
+async function persistNeighborhoods(rows: Neighborhood[]): Promise<Neighborhood[]> {
   await db.transaction('rw', db.neighborhoods, db.meta, async () => {
     await db.neighborhoods.clear()
     if (rows.length > 0) {
       await db.neighborhoods.bulkPut(rows)
     }
-    await db.meta.put({ key: 'neighborhoodsCatalogVersion', value: 2 })
+    await db.meta.put({ key: 'neighborhoodsCatalogVersion', value: BAIRROS_CATALOG_VERSION })
     await db.meta.put({ key: 'bairrosPulledAt', value: nowIso() })
   })
-
   return rows
+}
+
+export async function cacheNeighborhoodsFromRemote(
+  remoteNeighborhoods: Array<{ id: number; name: string; zone: string }>,
+  bairros: Bairro[] = [],
+): Promise<Neighborhood[]> {
+  return persistNeighborhoods(mergeNeighborhoodCatalog(remoteNeighborhoods, bairros))
+}
+
+export async function cacheBairrosLocally(bairros: Bairro[]): Promise<Neighborhood[]> {
+  const local = await db.neighborhoods.toArray()
+  const byRemote = new Map(local.filter((item) => item.remoteId).map((item) => [item.remoteId as string, item]))
+  const byName = new Map(local.map((item) => [foldName(item.name), item]))
+  let nextId = Math.max(0, ...local.map((item) => item.id)) + 1
+
+  const claimed = new Set<number>()
+  const rows: Neighborhood[] = []
+
+  for (const bairro of bairros) {
+    const existing = byRemote.get(bairro.id) ?? byName.get(foldName(bairro.nome))
+    const id = existing && !claimed.has(existing.id) ? existing.id : nextId++
+    claimed.add(id)
+    rows.push({
+      id,
+      name: existing?.name ?? bairro.nome,
+      zone: existing?.zone ?? bairro.distrito,
+      remoteId: bairro.id,
+      active: bairro.ativo,
+    })
+  }
+
+  for (const item of local) {
+    if (claimed.has(item.id)) continue
+    rows.push(item)
+    claimed.add(item.id)
+  }
+
+  return persistNeighborhoods(rows)
 }
 
 export async function listLocalBairros(): Promise<Bairro[]> {

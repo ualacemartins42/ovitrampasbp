@@ -107,9 +107,8 @@ const DEFAULT_TRAP_TYPES: TrapType[] = [
 ]
 
 export async function seedReferenceDataIfEmpty(): Promise<void> {
-  const catalog = await db.meta.get('neighborhoodsCatalogVersion')
   const count = await db.neighborhoods.count()
-  if (count === 0 || catalog?.value !== BAIRROS_CATALOG_VERSION) {
+  if (count === 0) {
     await seedOfficialNeighborhoods()
   }
 
