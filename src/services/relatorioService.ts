@@ -94,8 +94,8 @@ export function buildCompletedCycleReport(
     trap,
     agentName: agent?.fullName?.trim() || 'Agente não identificado',
     street: addressLine(trap),
-    neighborhood: cycle.neighborhoodName || trap?.district || 'Sem bairro',
-    district: trap?.district || cycle.neighborhoodName || '—',
+    neighborhood: cycle.neighborhoodName?.trim() || 'Sem bairro',
+    district: trap?.district?.trim() || '—',
     latitude: trap?.latitude ?? null,
     longitude: trap?.longitude ?? null,
   }
@@ -191,50 +191,42 @@ export function filterCompletedCycleReports(
   })
 }
 
-function csvCell(value: string): string {
-  if (/[;"\n\r]/.test(value)) return `"${value.replace(/"/g, '""')}"`
-  return value
+function csvCell(value: string | number | null | undefined): string {
+  const text = value == null ? '' : String(value)
+  return `"${text.replace(/"/g, '""')}"`
 }
 
 export function downloadCompletedCyclesCsv(rows: CompletedCycleReport[]): void {
   const header = [
-    'Código',
-    'Bairro / distrito',
-    'Rua',
-    'Instalação',
-    'SE instalação',
-    'Troca',
-    'SE troca',
-    'Situação troca',
-    'Retirada',
-    'SE retirada',
-    'Situação retirada',
-    'Agente',
-    'Latitude',
-    'Longitude',
-    'Obs. instalação',
-    'Obs. troca',
-    'Obs. retirada',
+    'Ovitrampa',
+    'Bairro',
+    'Distrito',
+    'Rua / Endereço',
+    'Data Instalação',
+    'SE Instalação',
+    'Data Troca',
+    'SE Troca',
+    'Situação Troca',
+    'Data Retirada',
+    'SE Retirada',
+    'Situação Retirada',
+    'Agente Responsável',
   ]
 
   const body = rows.map((row) => [
     row.cycle.trapCode,
     row.neighborhood,
-    row.street,
+    row.district,
+    row.street === '—' ? '' : row.street,
     formatDate(row.cycle.installAt),
-    weekLabel(row.cycle.installEpiWeek),
+    weekLabel(row.cycle.installEpiWeek).replace('—', ''),
     formatDate(row.cycle.swapAt),
-    weekLabel(row.cycle.swapEpiWeek),
-    situationLabel(row.cycle.swapSituation),
+    weekLabel(row.cycle.swapEpiWeek).replace('—', ''),
+    situationLabel(row.cycle.swapSituation).replace('—', ''),
     formatDate(row.cycle.removeAt),
-    weekLabel(row.cycle.removeEpiWeek),
-    situationLabel(row.cycle.removeSituation),
+    weekLabel(row.cycle.removeEpiWeek).replace('—', ''),
+    situationLabel(row.cycle.removeSituation).replace('—', ''),
     row.agentName,
-    row.latitude != null ? String(row.latitude) : '',
-    row.longitude != null ? String(row.longitude) : '',
-    row.cycle.installObs ?? '',
-    row.cycle.swapObs ?? '',
-    row.cycle.removeObs ?? '',
   ])
 
   const csv = `\uFEFF${[header, ...body].map((line) => line.map(csvCell).join(';')).join('\r\n')}`
