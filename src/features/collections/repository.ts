@@ -1,6 +1,69 @@
 import { db, enqueueSync } from '@/lib/db'
+import { isSupabaseConfigured, supabase } from '@/lib/supabase'
 import { createId, nowIso } from '@/lib/utils'
 import type { CollectionFormValues, CollectionRecord, Profile } from '@/types/domain'
+
+export function canDeleteCollection(
+  collection: CollectionRecord,
+  profile: Profile | null,
+  isAdmin: boolean,
+): boolean {
+  if (!profile) return false
+  if (isAdmin || profile.role === 'admin') return true
+  return collection.agentId === profile.id
+}
+
+export async function deleteCollection(
+  collection: CollectionRecord,
+  profile: Profile,
+  isAdmin: boolean,
+): Promise<void> {
+  if (!canDeleteCollection(collection, profile, isAdmin)) {
+    throw new Error('Você não tem permissão para excluir esta coleta.')
+  }
+
+  const queueItems = await db.syncQueue
+    .filter((item) => item.payloadId === collection.id && (item.type === 'collection' || item.type === 'photo'))
+    .toArray()
+  for (const item of queueItems) {
+    await db.syncQueue.delete(item.id)
+  }
+
+  if (collection.localPhotoId) {
+    await db.photos.delete(collection.localPhotoId)
+  }
+
+  const labResults = await db.labResults.where('collectionId').equals(collection.id).toArray()
+  for (const result of labResults) {
+    await db.labResults.delete(result.id)
+  }
+
+  await db.collections.delete(collection.id)
+
+  const needsRemoteDelete = collection.syncStatus === 'synced' || collection.syncStatus === 'error'
+  if (needsRemoteDelete && navigator.onLine && isSupabaseConfigured() && supabase) {
+    const { error } = await supabase.from('collections').delete().eq('id', collection.id)
+    if (error) {
+      await enqueueSync({
+        id: createId(),
+        type: 'collection',
+        payloadId: collection.id,
+        createdAt: nowIso(),
+      })
+      throw new Error(error.message)
+    }
+    return
+  }
+
+  if (needsRemoteDelete) {
+    await enqueueSync({
+      id: createId(),
+      type: 'collection',
+      payloadId: collection.id,
+      createdAt: nowIso(),
+    })
+  }
+}
 
 export async function saveCollection(profile: Profile, values: CollectionFormValues, photo: Blob | null) {
   const id = createId()

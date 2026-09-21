@@ -290,7 +290,11 @@ async function uploadPhoto(agentId: string, collectionClientId: string): Promise
 async function pushCollection(collectionId: string): Promise<void> {
   if (!supabase) throw new Error('Supabase não configurado')
   const collection = await db.collections.get(collectionId)
-  if (!collection) return
+  if (!collection) {
+    const { error } = await supabase.from('collections').delete().eq('id', collectionId)
+    if (error) throw error
+    return
+  }
 
   const photoPath = collection.localPhotoId
     ? await uploadPhoto(collection.agentId, collection.localPhotoId)
