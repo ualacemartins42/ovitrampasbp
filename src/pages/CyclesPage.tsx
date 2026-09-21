@@ -4,19 +4,60 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { Input } from '@/components/ui/field'
+import { neighborhoodLabelById } from '@/constants/bairros'
 import { CYCLE_STATUS_ACTION } from '@/lib/constants'
 import { db } from '@/lib/db'
-import type { CycleRecord } from '@/types/domain'
+import { foldSearchText } from '@/lib/utils'
+import { useNeighborhoods } from '@/hooks/useNeighborhoods'
+import type { CycleRecord, Trap } from '@/types/domain'
 
 export function CyclesPage() {
   const [cycles, setCycles] = useState<CycleRecord[]>([])
+  const [traps, setTraps] = useState<Trap[]>([])
+  const [query, setQuery] = useState('')
+  const neighborhoods = useNeighborhoods()
 
   useEffect(() => {
-    const sub = liveQuery(() => db.cycles.orderBy('createdAt').reverse().toArray()).subscribe(setCycles)
-    return () => sub.unsubscribe()
+    const cyclesSub = liveQuery(() => db.cycles.orderBy('createdAt').reverse().toArray()).subscribe(setCycles)
+    const trapsSub = liveQuery(() => db.traps.toArray()).subscribe(setTraps)
+    return () => {
+      cyclesSub.unsubscribe()
+      trapsSub.unsubscribe()
+    }
   }, [])
 
+  const trapsByCode = useMemo(() => {
+    const map = new Map<string, Trap>()
+    for (const trap of traps) {
+      if (!trap.deletedAt) map.set(trap.code, trap)
+    }
+    return map
+  }, [traps])
+
   const active = useMemo(() => cycles.filter((item) => item.status !== 'finalizada'), [cycles])
+
+  const filtered = useMemo(() => {
+    const term = foldSearchText(query)
+    if (!term) return active
+    return active.filter((cycle) => {
+      const trap = trapsByCode.get(cycle.trapCode)
+      const neighborhood =
+        cycle.neighborhoodName ??
+        (trap ? neighborhoodLabelById(neighborhoods, trap.neighborhoodId, '') : '')
+      const haystack = foldSearchText(
+        [
+          cycle.trapCode,
+          `#${cycle.trapCode}`,
+          trap?.street ?? '',
+          trap?.number ?? '',
+          trap?.district ?? '',
+          neighborhood,
+        ].join(' '),
+      )
+      return haystack.includes(term)
+    })
+  }, [active, query, trapsByCode, neighborhoods])
 
   return (
     <div className="space-y-4">
@@ -28,10 +69,17 @@ export function CyclesPage() {
           Ver ciclos concluídos
         </Link>
       </div>
+      <Input
+        value={query}
+        placeholder="Buscar por número, rua ou bairro"
+        onChange={(event) => setQuery(event.target.value)}
+      />
       {active.length === 0 ? (
         <Card className="text-sm text-muted">Nenhum ciclo aberto. Inicie uma nova instalação.</Card>
+      ) : filtered.length === 0 ? (
+        <Card className="text-sm text-muted">Nenhum ciclo em andamento encontrado para esta busca.</Card>
       ) : (
-        active.map((cycle) => {
+        filtered.map((cycle) => {
           const waitingSwap = cycle.status === 'instalada'
           return (
             <Link key={cycle.id} to={`/ciclos/${cycle.id}`} className="block">
