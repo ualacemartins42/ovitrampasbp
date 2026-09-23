@@ -1,14 +1,17 @@
 import { useState, type FormEvent } from 'react'
+import { Download } from 'lucide-react'
 import { Navigate } from 'react-router-dom'
 import { BrandMark } from '@/components/brand/BrandMark'
 import { Button } from '@/components/ui/button'
 import { Field, Input } from '@/components/ui/field'
 import { PasswordInput } from '@/components/ui/password-input'
 import { useAuth } from '@/features/auth/auth-context'
+import { usePWAInstall } from '@/hooks/usePWAInstall'
 import brasaoBarraDoPirai from '@/assets/brand/brasao-barra-do-pirai.png'
 
 export function LoginPage() {
   const { profile, configured, signIn, signInDemo } = useAuth()
+  const { canInstall, promptInstall } = usePWAInstall()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -81,6 +84,14 @@ export function LoginPage() {
       <Button variant="secondary" className="mt-4 w-full" onClick={() => void signInDemo()}>
         Entrar no Modo Offline
       </Button>
+
+      {canInstall ? (
+        <Button variant="secondary" className="mt-3 w-full" onClick={() => void promptInstall()}>
+          <Download className="size-4" aria-hidden />
+          Instalar Aplicativo Ovitrampas
+        </Button>
+      ) : null}
+
       <div className="mt-6 flex flex-col items-center justify-center">
         <img
           src={brasaoBarraDoPirai}
