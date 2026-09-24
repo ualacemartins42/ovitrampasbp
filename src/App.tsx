@@ -13,6 +13,7 @@ import { HomePage } from '@/pages/HomePage'
 import { LabPanelPage } from '@/pages/LabPanelPage'
 import { LoginPage } from '@/pages/LoginPage'
 import { MapPage } from '@/pages/MapPage'
+import { MapaCalorPage } from '@/pages/MapaCalorPage'
 import { ProfilePage } from '@/pages/ProfilePage'
 import { RelatoriosPage } from '@/pages/RelatoriosPage'
 import { SyncPage } from '@/pages/SyncPage'
@@ -36,6 +37,7 @@ export default function App() {
             <Route path="/ciclos/:id" element={<CycleFormPage />} />
             <Route path="/relatorios" element={<RelatoriosPage />} />
             <Route path="/mapa" element={<MapPage />} />
+            <Route path="/mapa-calor" element={<MapaCalorPage />} />
             <Route path="/contagem-ovos" element={<ContagemOvosPage />} />
             <Route path="/educacao-saude" element={<EducacaoSaudePage />} />
             <Route path="/coletas" element={<CollectionsListPage />} />

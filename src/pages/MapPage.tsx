@@ -2,7 +2,7 @@ import { liveQuery } from 'dexie'
 import L from 'leaflet'
 import { Crosshair } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { BARRA_DO_PIRAI_CENTER, CYCLE_STATUS_LABELS } from '@/lib/constants'
@@ -154,8 +154,14 @@ export function MapPage() {
 
   return (
     <div className="relative -mx-4 -mt-4 h-[calc(100svh-8.5rem)] overflow-hidden bg-line">
-      <div className="pointer-events-none absolute left-1/2 top-4 z-[1000] -translate-x-1/2 rounded-full bg-white/90 px-4 py-2 text-sm font-bold">
-        Mapa de ovitrampas
+      <div className="absolute left-1/2 top-3 z-[1000] flex -translate-x-1/2 items-center gap-2">
+        <span className="rounded-full bg-white/95 px-3 py-1.5 text-sm font-bold shadow">Mapa de ovitrampas</span>
+        <Link
+          to="/mapa-calor"
+          className="rounded-full bg-orange-50 px-3 py-1.5 text-sm font-semibold text-orange-700 shadow hover:bg-orange-100"
+        >
+          Mapa de Calor
+        </Link>
       </div>
       <Button
         variant="secondary"

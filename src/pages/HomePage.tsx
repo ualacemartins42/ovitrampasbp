@@ -1,5 +1,5 @@
 import { liveQuery } from 'dexie'
-import { Camera, ClipboardPlus, CloudUpload, Earth, FileBarChart, MapPinned, Megaphone, Microscope, RefreshCw } from 'lucide-react'
+import { Camera, ClipboardPlus, CloudUpload, Earth, FileBarChart, Flame, MapPinned, Megaphone, Microscope, RefreshCw } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
@@ -92,6 +92,16 @@ export function HomePage() {
           <div>
             <p className="font-semibold">Mapa satélite</p>
             <p className="text-sm text-muted">Ver armadilhas e iniciar ciclo no ponto.</p>
+          </div>
+        </Card>
+      </Link>
+
+      <Link to="/mapa-calor" className="block">
+        <Card className="flex items-center justify-center gap-3 py-5">
+          <Flame className="size-9 text-orange-600" />
+          <div>
+            <p className="font-semibold">Mapa de Calor (ContaOvos)</p>
+            <p className="text-sm text-muted">Densidade de ovos por ovitrampa no município.</p>
           </div>
         </Card>
       </Link>
