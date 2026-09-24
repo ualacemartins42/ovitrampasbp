@@ -283,11 +283,19 @@ export function MapaCalorPage() {
         <span className="text-muted">
           {loading ? 'Carregando…' : `${points.length} ponto(s)`}
         </span>
-        <span className="ml-auto hidden items-center gap-2 text-muted sm:inline-flex">
-          <span className="inline-block size-2.5 rounded-full bg-green-600" /> Baixa
-          <span className="inline-block size-2.5 rounded-full bg-yellow-500" /> Moderada
-          <span className="inline-block size-2.5 rounded-full bg-orange-500" /> Alta
-          <span className="inline-block size-2.5 rounded-full bg-red-600" /> Muito alta
+        <span className="flex w-full flex-wrap items-center gap-2 text-xs text-muted sm:ml-auto sm:w-auto sm:text-sm">
+          <span className="inline-flex items-center gap-1">
+            <span className="inline-block size-2.5 rounded-full bg-green-600" /> Baixa
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <span className="inline-block size-2.5 rounded-full bg-yellow-500" /> Moderada
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <span className="inline-block size-2.5 rounded-full bg-orange-500" /> Alta
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <span className="inline-block size-2.5 rounded-full bg-red-600" /> Muito alta
+          </span>
         </span>
       </div>
 
