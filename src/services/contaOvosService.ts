@@ -254,15 +254,13 @@ export async function loadLocalEggCountHeatPoints(query: ContaOvosHeatQuery = {}
   for (const record of records) {
     if (record.eggCount == null) continue
     const trap = trapsByCode.get(foldSearchText(record.trapCode))
-    const latitude = trap?.latitude
-    const longitude = trap?.longitude
-    if (latitude == null || longitude == null) continue
+    if (!trap || trap.latitude == null || trap.longitude == null) continue
 
     const point: ContaOvosHeatPoint = {
       id: `local-${record.id}`,
       trapCode: record.trapCode,
-      latitude,
-      longitude,
+      latitude: trap.latitude,
+      longitude: trap.longitude,
       eggs: record.eggCount,
       date: record.analysisDate,
       dateCollect: record.analysisDate,
