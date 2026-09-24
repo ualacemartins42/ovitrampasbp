@@ -7,11 +7,12 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Field, Input, Select } from '@/components/ui/field'
 import { formatNeighborhoodLabel } from '@/constants/bairros'
+import { useLayoutMode } from '@/context/LayoutContext'
 import { useAuth } from '@/features/auth/auth-context'
 import { useNeighborhoods } from '@/hooks/useNeighborhoods'
-import { CYCLE_SITUATION_LABELS } from '@/lib/constants'
+import { cycleSituationLabel } from '@/lib/constants'
 import { pullRemoteData } from '@/lib/sync'
-import { formatDate } from '@/lib/utils'
+import { cn, formatDate } from '@/lib/utils'
 import {
   downloadCompletedCyclesCsv,
   EMPTY_REPORT_FILTERS,
@@ -24,7 +25,7 @@ import {
 } from '@/services/relatorioService'
 
 function situationLabel(value: CompletedCycleReport['cycle']['swapSituation']): string {
-  return value ? CYCLE_SITUATION_LABELS[value] : '—'
+  return cycleSituationLabel(value)
 }
 
 function weekLabel(week: number | null | undefined): string {
@@ -33,6 +34,7 @@ function weekLabel(week: number | null | undefined): string {
 
 export function RelatoriosPage() {
   const { profile } = useAuth()
+  const { isDesktop } = useLayoutMode()
   const neighborhoods = useNeighborhoods(true)
   const [rows, setRows] = useState<CompletedCycleReport[]>([])
   const [filters, setFilters] = useState<ReportFilters>(EMPTY_REPORT_FILTERS)
@@ -94,7 +96,7 @@ export function RelatoriosPage() {
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-2">
+      <div className={cn('grid gap-2', isDesktop ? 'grid-cols-2 xl:grid-cols-4' : 'grid-cols-1')}>
         <Field label="Bairro / distrito">
           <Select value={filters.neighborhood} onChange={(event) => updateFilter('neighborhood', event.target.value)}>
             <option value="">Todos</option>
@@ -172,45 +174,54 @@ export function RelatoriosPage() {
       ) : filtered.length === 0 ? (
         <Card className="text-sm text-muted">Nenhum ciclo com as três etapas concluídas foi encontrado.</Card>
       ) : (
-        filtered.map((row) => (
-          <button key={row.cycle.id} type="button" className="block w-full text-left" onClick={() => setSelected(row)}>
-            <Card className="space-y-2 transition hover:border-primary/40">
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <p className="font-semibold text-ink">Ovitrampa {row.cycle.trapCode}</p>
-                  <p className="text-xs text-muted">{row.neighborhood}</p>
+        <div
+          className={cn(
+            isDesktop ? 'grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3' : 'space-y-3',
+          )}
+        >
+          {filtered.map((row) => (
+            <button key={row.cycle.id} type="button" className="block w-full text-left" onClick={() => setSelected(row)}>
+              <Card className="h-full space-y-2 transition hover:border-primary/40">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <p className="font-semibold text-ink">Ovitrampa {row.cycle.trapCode}</p>
+                    <p className="text-xs text-muted">{row.neighborhood}</p>
+                  </div>
+                  <FileBarChart className="size-4 shrink-0 text-primary" />
                 </div>
-                <FileBarChart className="size-4 shrink-0 text-primary" />
-              </div>
-              <dl className="grid grid-cols-1 gap-1 text-xs text-muted">
-                <div className="flex justify-between gap-3">
-                  <dt>Instalação</dt>
-                  <dd className="text-ink">
-                    {formatDate(row.cycle.installAt)} · {weekLabel(row.cycle.installEpiWeek)}
-                  </dd>
-                </div>
-                <div className="flex justify-between gap-3">
-                  <dt>Troca</dt>
-                  <dd className="text-right text-ink">
-                    {formatDate(row.cycle.swapAt)} · {weekLabel(row.cycle.swapEpiWeek)}
-                    <span className="block">{situationLabel(row.cycle.swapSituation)}</span>
-                  </dd>
-                </div>
-                <div className="flex justify-between gap-3">
-                  <dt>Retirada</dt>
-                  <dd className="text-right text-ink">
-                    {formatDate(row.cycle.removeAt)} · {weekLabel(row.cycle.removeEpiWeek)}
-                    <span className="block">{situationLabel(row.cycle.removeSituation)}</span>
-                  </dd>
-                </div>
-                <div className="flex justify-between gap-3">
-                  <dt>Agente</dt>
-                  <dd className="text-ink">{row.agentName}</dd>
-                </div>
-              </dl>
-            </Card>
-          </button>
-        ))
+                <dl className="grid grid-cols-1 gap-1 text-xs text-muted">
+                  <div className="flex justify-between gap-3">
+                    <dt>Instalação</dt>
+                    <dd className="text-ink">
+                      {formatDate(row.cycle.installAt)} · {weekLabel(row.cycle.installEpiWeek)}
+                      {row.cycle.estratoLiraa ? (
+                        <span className="block">Estrato LIRAa: {row.cycle.estratoLiraa}</span>
+                      ) : null}
+                    </dd>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <dt>Troca</dt>
+                    <dd className="text-right text-ink">
+                      {formatDate(row.cycle.swapAt)} · {weekLabel(row.cycle.swapEpiWeek)}
+                      <span className="block">{situationLabel(row.cycle.swapSituation)}</span>
+                    </dd>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <dt>Retirada</dt>
+                    <dd className="text-right text-ink">
+                      {formatDate(row.cycle.removeAt)} · {weekLabel(row.cycle.removeEpiWeek)}
+                      <span className="block">{situationLabel(row.cycle.removeSituation)}</span>
+                    </dd>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <dt>Agente</dt>
+                    <dd className="text-ink">{row.agentName}</dd>
+                  </div>
+                </dl>
+              </Card>
+            </button>
+          ))}
+        </div>
       )}
 
       <CicloDetalhesModal report={selected} onClose={() => setSelected(null)} />

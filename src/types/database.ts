@@ -204,13 +204,14 @@ export interface Database {
           install_at: string | null
           install_epi_week: number | null
           install_obs: string | null
+          estrato_liraa: string | null
           swap_at: string | null
           swap_epi_week: number | null
-          swap_situation: 'normal' | 'seca' | 'ausente' | 'danificada' | null
+          swap_situation: string | null
           swap_obs: string | null
           remove_at: string | null
           remove_epi_week: number | null
-          remove_situation: 'normal' | 'seca' | 'ausente' | 'danificada' | null
+          remove_situation: string | null
           remove_obs: string | null
           agent_id: string
           created_at: string
@@ -225,13 +226,14 @@ export interface Database {
           install_at?: string | null
           install_epi_week?: number | null
           install_obs?: string | null
+          estrato_liraa?: string | null
           swap_at?: string | null
           swap_epi_week?: number | null
-          swap_situation?: 'normal' | 'seca' | 'ausente' | 'danificada' | null
+          swap_situation?: string | null
           swap_obs?: string | null
           remove_at?: string | null
           remove_epi_week?: number | null
-          remove_situation?: 'normal' | 'seca' | 'ausente' | 'danificada' | null
+          remove_situation?: string | null
           remove_obs?: string | null
           agent_id: string
           created_at?: string
@@ -320,6 +322,44 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['lab_results']['Insert']>
         Relationships: []
       }
+      educacao_saude: {
+        Row: {
+          id: string
+          trap_code: string
+          trap_id: number | null
+          street: string | null
+          number: string | null
+          neighborhood_name: string | null
+          district: string | null
+          action_date: string
+          action_taken: string | null
+          egg_count: number | null
+          cycle_id: string | null
+          photo_paths: string[]
+          agent_id: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          trap_code: string
+          trap_id?: number | null
+          street?: string | null
+          number?: string | null
+          neighborhood_name?: string | null
+          district?: string | null
+          action_date: string
+          action_taken?: string | null
+          egg_count?: number | null
+          cycle_id?: string | null
+          photo_paths?: string[]
+          agent_id: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['educacao_saude']['Insert']>
+        Relationships: []
+      }
     }
     Views: {
       collections_with_lab: {
@@ -360,7 +400,6 @@ export interface Database {
       mosquito_species: 'aedes_aegypti' | 'aedes_albopictus' | 'culex' | 'outro' | 'nao_identificado'
       trap_area_type: 'urbana' | 'periurbana' | 'rural'
       cycle_status: 'instalada' | 'trocada' | 'finalizada'
-      cycle_situation: 'normal' | 'seca' | 'ausente' | 'danificada'
     }
     CompositeTypes: Record<string, never>
   }

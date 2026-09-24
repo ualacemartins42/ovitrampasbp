@@ -7,11 +7,13 @@ import { Card } from '@/components/ui/card'
 import { Field, Input, Select } from '@/components/ui/field'
 import { NeighborhoodSelect } from '@/components/forms/NeighborhoodSelect'
 import { districtGroupLabel } from '@/constants/bairros'
+import { useLayoutMode } from '@/context/LayoutContext'
 import { deleteTrap, saveTrap, type TrapFormValues } from '@/features/traps/repository'
 import { TRAP_AREA_LABELS } from '@/lib/constants'
 import { db } from '@/lib/db'
 import { captureCoordinates } from '@/lib/geo'
 import { useNeighborhoods } from '@/hooks/useNeighborhoods'
+import { cn } from '@/lib/utils'
 import type { Trap, TrapAreaType } from '@/types/domain'
 
 const emptyForm: TrapFormValues = {
@@ -32,12 +34,13 @@ const emptyForm: TrapFormValues = {
 export function TrapFormPage() {
   const { code } = useParams()
   const navigate = useNavigate()
+  const { isDesktop } = useLayoutMode()
   const editing = Boolean(code)
   const [existing, setExisting] = useState<Trap | null>(null)
   const [values, setValues] = useState<TrapFormValues>(emptyForm)
   const [gpsMessage, setGpsMessage] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
-  const neighborhoods = useNeighborhoods()
+  const neighborhoods = useNeighborhoods(true)
 
   useEffect(() => {
     if (!code) {
@@ -136,7 +139,7 @@ export function TrapFormPage() {
         />
       </Field>
 
-      <div className="grid grid-cols-1 gap-2">
+      <div className={cn(isDesktop ? 'grid grid-cols-2 gap-4 xl:grid-cols-3' : 'space-y-4')}>
         <Field label="Bairro / distrito">
           <NeighborhoodSelect
             neighborhoods={neighborhoods}
@@ -154,49 +157,45 @@ export function TrapFormPage() {
         <Field label="Setor/Distrito">
           <Input value={values.district} onChange={(event) => patch('district', event.target.value)} />
         </Field>
-      </div>
 
-      <Field label="Rua onde está localizada">
-        <Input value={values.street} onChange={(event) => patch('street', event.target.value)} />
-      </Field>
+        <Field label="Rua onde está localizada">
+          <Input value={values.street} onChange={(event) => patch('street', event.target.value)} />
+        </Field>
 
-      <div className="grid grid-cols-2 gap-2">
         <Field label="Número">
           <Input value={values.number} onChange={(event) => patch('number', event.target.value)} />
         </Field>
         <Field label="Complemento">
           <Input value={values.complement} onChange={(event) => patch('complement', event.target.value)} />
         </Field>
-      </div>
 
-      <Field label="Localização (ex: muro)">
-        <Input value={values.locationDetail} onChange={(event) => patch('locationDetail', event.target.value)} />
-      </Field>
+        <Field label="Localização (ex: muro)">
+          <Input value={values.locationDetail} onChange={(event) => patch('locationDetail', event.target.value)} />
+        </Field>
 
-      <div className="grid grid-cols-2 gap-2">
         <Field label="Responsável">
           <Input value={values.responsible} onChange={(event) => patch('responsible', event.target.value)} />
         </Field>
         <Field label="Quarteirão">
           <Input value={values.block} onChange={(event) => patch('block', event.target.value)} />
         </Field>
+
+        <Field label="Tipo da ovitrampa">
+          <Select
+            value={values.areaType}
+            onChange={(event) => patch('areaType', event.target.value as TrapAreaType)}
+          >
+            {Object.entries(TRAP_AREA_LABELS).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </Select>
+        </Field>
       </div>
 
-      <Field label="Tipo da ovitrampa">
-        <Select
-          value={values.areaType}
-          onChange={(event) => patch('areaType', event.target.value as TrapAreaType)}
-        >
-          {Object.entries(TRAP_AREA_LABELS).map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
-        </Select>
-      </Field>
-
       <Card className="space-y-3">
-        <Button variant="secondary" className="w-full" onClick={() => void onCaptureGps()}>
+        <Button type="button" variant="secondary" className="w-full" onClick={() => void onCaptureGps()}>
           <MapPin className="size-4" />
           Capturar GPS
         </Button>

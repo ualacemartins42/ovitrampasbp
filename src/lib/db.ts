@@ -1,5 +1,6 @@
 import Dexie, { type EntityTable } from 'dexie'
 import { BAIRROS_CATALOG_VERSION, BARRA_DO_PIRAI_BAIRROS } from '@/constants/bairros'
+import type { EducacaoSaudeRecord } from '@/types/educacao'
 import type {
   CollectionRecord,
   CycleRecord,
@@ -24,6 +25,7 @@ class OvitrampasDatabase extends Dexie {
   properties!: EntityTable<Property, 'id'>
   traps!: EntityTable<Trap, 'id'>
   cycles!: EntityTable<CycleRecord, 'id'>
+  educacaoSaude!: EntityTable<EducacaoSaudeRecord, 'id'>
   profiles!: EntityTable<Profile, 'id'>
   collections!: EntityTable<CollectionRecord, 'id'>
   labResults!: EntityTable<LabResult, 'id'>
@@ -54,6 +56,9 @@ class OvitrampasDatabase extends Dexie {
     })
     this.version(4).stores({
       neighborhoods: 'id, name, zone, remoteId, active',
+    })
+    this.version(5).stores({
+      educacaoSaude: 'id, trapCode, agentId, syncStatus, actionDate, createdAt',
     })
   }
 }

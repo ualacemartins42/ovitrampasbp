@@ -6,9 +6,10 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/field'
 import { neighborhoodLabelById } from '@/constants/bairros'
+import { useLayoutMode } from '@/context/LayoutContext'
 import { CYCLE_STATUS_ACTION } from '@/lib/constants'
 import { db } from '@/lib/db'
-import { foldSearchText } from '@/lib/utils'
+import { cn, foldSearchText } from '@/lib/utils'
 import { useNeighborhoods } from '@/hooks/useNeighborhoods'
 import type { CycleRecord, Trap } from '@/types/domain'
 
@@ -16,7 +17,8 @@ export function CyclesPage() {
   const [cycles, setCycles] = useState<CycleRecord[]>([])
   const [traps, setTraps] = useState<Trap[]>([])
   const [query, setQuery] = useState('')
-  const neighborhoods = useNeighborhoods()
+  const neighborhoods = useNeighborhoods(true)
+  const { isDesktop } = useLayoutMode()
 
   useEffect(() => {
     const cyclesSub = liveQuery(() => db.cycles.orderBy('createdAt').reverse().toArray()).subscribe(setCycles)
@@ -79,33 +81,45 @@ export function CyclesPage() {
       ) : filtered.length === 0 ? (
         <Card className="text-sm text-muted">Nenhum ciclo em andamento encontrado para esta busca.</Card>
       ) : (
-        filtered.map((cycle) => {
-          const waitingSwap = cycle.status === 'instalada'
-          return (
-            <Link key={cycle.id} to={`/ciclos/${cycle.id}`} className="block">
-              <Card
-                className={`flex items-center justify-between gap-3 border-l-4 ${
-                  waitingSwap ? 'border-l-blue-500' : 'border-l-orange-500'
-                }`}
-              >
-                <div>
-                  <p className="font-semibold">Armadilha #{cycle.trapCode}</p>
-                  {cycle.neighborhoodName ? <p className="text-xs text-muted">{cycle.neighborhoodName}</p> : null}
-                  <p className="flex items-center gap-1 text-xs text-muted">
-                    {waitingSwap ? <RefreshCw className="size-3.5 text-blue-600" /> : <Box className="size-3.5 text-orange-600" />}
-                    {CYCLE_STATUS_ACTION[waitingSwap ? 'instalada' : 'trocada']}
-                  </p>
-                </div>
-                <ChevronRight className="size-4 text-muted" />
-              </Card>
-            </Link>
-          )
-        })
+        <div
+          className={cn(
+            isDesktop ? 'grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3' : 'space-y-3',
+          )}
+        >
+          {filtered.map((cycle) => {
+            const waitingSwap = cycle.status === 'instalada'
+            return (
+              <Link key={cycle.id} to={`/ciclos/${cycle.id}`} className="block">
+                <Card
+                  className={`flex h-full items-center justify-between gap-3 border-l-4 ${
+                    waitingSwap ? 'border-l-blue-500' : 'border-l-orange-500'
+                  }`}
+                >
+                  <div>
+                    <p className="font-semibold">Armadilha #{cycle.trapCode}</p>
+                    {cycle.neighborhoodName ? <p className="text-xs text-muted">{cycle.neighborhoodName}</p> : null}
+                    <p className="flex items-center gap-1 text-xs text-muted">
+                      {waitingSwap ? <RefreshCw className="size-3.5 text-blue-600" /> : <Box className="size-3.5 text-orange-600" />}
+                      {CYCLE_STATUS_ACTION[waitingSwap ? 'instalada' : 'trocada']}
+                    </p>
+                  </div>
+                  <ChevronRight className="size-4 shrink-0 text-muted" />
+                </Card>
+              </Link>
+            )
+          })}
+        </div>
       )}
-      <div className="h-16" />
-      <div className="fixed inset-x-0 bottom-20 z-10 mx-auto w-full max-w-lg px-4">
+      {!isDesktop ? <div className="h-16" /> : null}
+      <div
+        className={cn(
+          isDesktop
+            ? 'pt-2'
+            : 'fixed inset-x-0 bottom-20 z-10 mx-auto w-full max-w-lg px-4',
+        )}
+      >
         <Link to="/ciclos/novo">
-          <Button className="w-full bg-blue-600 hover:bg-blue-700" size="lg">
+          <Button className={cn('w-full bg-blue-600 hover:bg-blue-700', isDesktop && 'max-w-sm')} size="lg">
             <Plus className="size-5" />
             Nova instalação
           </Button>

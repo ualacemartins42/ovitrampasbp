@@ -6,14 +6,17 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/field'
 import { neighborhoodLabelById } from '@/constants/bairros'
+import { useLayoutMode } from '@/context/LayoutContext'
 import { db } from '@/lib/db'
 import { useNeighborhoods } from '@/hooks/useNeighborhoods'
+import { cn } from '@/lib/utils'
 import type { Trap } from '@/types/domain'
 
 export function TrapsPage() {
   const [traps, setTraps] = useState<Trap[]>([])
-  const neighborhoods = useNeighborhoods()
+  const neighborhoods = useNeighborhoods(true)
   const [query, setQuery] = useState('')
+  const { isDesktop } = useLayoutMode()
 
   useEffect(() => {
     const sub = liveQuery(() => db.traps.orderBy('code').toArray()).subscribe(setTraps)
@@ -42,26 +45,38 @@ export function TrapsPage() {
       {filtered.length === 0 ? (
         <Card className="text-sm text-muted">Nenhuma ovitrampa cadastrada neste aparelho.</Card>
       ) : (
-        filtered.map((trap) => (
-          <Link key={trap.id} to={`/ovitrampas/${encodeURIComponent(trap.code)}`} className="block">
-            <Card className="flex items-center justify-between gap-3 border-l-4 border-l-primary">
-              <div>
-                <p className="text-lg font-semibold">Ovitrampa {trap.code}</p>
-                <p className="text-sm text-muted">
-                  {neighborhoodName(trap.neighborhoodId)}
-                  {trap.street ? ` · ${trap.street}` : ''}
-                  {trap.number ? `, ${trap.number}` : ''}
-                </p>
-              </div>
-              <Pencil className="size-4 text-muted" />
-            </Card>
-          </Link>
-        ))
+        <div
+          className={cn(
+            isDesktop ? 'grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3' : 'space-y-3',
+          )}
+        >
+          {filtered.map((trap) => (
+            <Link key={trap.id} to={`/ovitrampas/${encodeURIComponent(trap.code)}`} className="block">
+              <Card className="flex h-full items-center justify-between gap-3 border-l-4 border-l-primary">
+                <div>
+                  <p className="text-lg font-semibold">Ovitrampa {trap.code}</p>
+                  <p className="text-sm text-muted">
+                    {neighborhoodName(trap.neighborhoodId)}
+                    {trap.street ? ` · ${trap.street}` : ''}
+                    {trap.number ? `, ${trap.number}` : ''}
+                  </p>
+                </div>
+                <Pencil className="size-4 shrink-0 text-muted" />
+              </Card>
+            </Link>
+          ))}
+        </div>
       )}
-      <div className="h-16" />
-      <div className="fixed inset-x-0 bottom-20 z-10 mx-auto w-full max-w-lg px-4">
+      {!isDesktop ? <div className="h-16" /> : null}
+      <div
+        className={cn(
+          isDesktop
+            ? 'pt-2'
+            : 'fixed inset-x-0 bottom-20 z-10 mx-auto w-full max-w-lg px-4',
+        )}
+      >
         <Link to="/ovitrampas/nova">
-          <Button className="w-full" size="lg">
+          <Button className={cn('w-full', isDesktop && 'max-w-sm')} size="lg">
             <Plus className="size-5" />
             Cadastrar nova ovitrampa
           </Button>

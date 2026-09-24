@@ -16,7 +16,7 @@ export function LabPanelPage() {
   const { profile } = useAuth()
   const [collections, setCollections] = useState<CollectionRecord[]>([])
   const [results, setResults] = useState<LabResult[]>([])
-  const neighborhoods = useNeighborhoods()
+  const neighborhoods = useNeighborhoods(true)
   const [selectedId, setSelectedId] = useState('')
   const [eggCount, setEggCount] = useState('')
   const [species, setSpecies] = useState<MosquitoSpecies>('aedes_aegypti')

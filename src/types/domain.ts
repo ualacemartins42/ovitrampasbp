@@ -11,7 +11,7 @@ export type TrapAreaType = 'urbana' | 'periurbana' | 'rural'
 
 export type CycleStatus = 'instalada' | 'trocada' | 'finalizada'
 
-export type CycleSituation = 'normal' | 'seca' | 'ausente' | 'danificada'
+export type CycleSituation = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '10'
 
 export type CollectionKind = 'instalacao' | 'vistoria' | 'recolhimento'
 
@@ -102,6 +102,7 @@ export interface CycleRecord {
   installAt: string | null
   installEpiWeek: number | null
   installObs: string | null
+  estratoLiraa: string | null
   swapAt: string | null
   swapEpiWeek: number | null
   swapSituation: CycleSituation | null
@@ -155,7 +156,7 @@ export interface LabResult {
   syncStatus: LocalSyncStatus
 }
 
-export type SyncQueueType = 'collection' | 'photo' | 'lab_result' | 'profile' | 'trap' | 'cycle'
+export type SyncQueueType = 'collection' | 'photo' | 'lab_result' | 'profile' | 'trap' | 'cycle' | 'educacao_saude'
 
 export interface SyncQueueItem {
   id: string

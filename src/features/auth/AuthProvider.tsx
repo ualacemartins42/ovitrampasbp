@@ -1,6 +1,7 @@
 import { QueryClientProvider } from '@tanstack/react-query'
 import type { User } from '@supabase/supabase-js'
 import { useCallback, useEffect, useMemo, useState, type Dispatch, type ReactNode, type SetStateAction } from 'react'
+import { LayoutProvider } from '@/context/LayoutContext'
 import { AuthContext, type AuthContextValue } from '@/features/auth/auth-context'
 import { DEMO_AGENT_ID, isAdminEmail } from '@/lib/constants'
 import { db, seedReferenceDataIfEmpty } from '@/lib/db'
@@ -201,7 +202,9 @@ export function AppProviders({ children }: { children: ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+      <LayoutProvider>
+        <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+      </LayoutProvider>
     </QueryClientProvider>
   )
 }

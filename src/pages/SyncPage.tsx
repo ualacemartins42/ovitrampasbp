@@ -16,6 +16,7 @@ const TYPE_LABELS: Record<SyncQueueItem['type'], string> = {
   profile: 'Perfil',
   trap: 'Ovitrampa',
   cycle: 'Ciclo',
+  educacao_saude: 'Educação em Saúde',
 }
 
 export function SyncPage() {

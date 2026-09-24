@@ -29,19 +29,23 @@ export function NeighborhoodSelect({
   disabled,
   className,
 }: NeighborhoodSelectProps) {
-  const groups = useMemo(
-    () =>
-      groupNeighborhoodsByDistrict(neighborhoods.filter((item) => item.active !== false)).map((group) => ({
-        label: group.label,
-        options: group.items.map((item) => ({
-          value: String(item.id),
-          label: item.name,
-          selectedLabel: formatNeighborhoodLabel(item),
-          searchText: neighborhoodSearchText(item, group.label),
-        })),
+  const groups = useMemo(() => {
+    const selectable = neighborhoods.filter((item) => {
+      if (item.active !== false) return true
+      // Mantém o bairro inativo atual visível ao editar ovitrampa/ciclo já vinculado
+      return value !== '' && String(item.id) === value
+    })
+    const sorted = [...selectable].sort((left, right) => left.name.localeCompare(right.name, 'pt-BR'))
+    return groupNeighborhoodsByDistrict(sorted).map((group) => ({
+      label: group.label,
+      options: group.items.map((item) => ({
+        value: String(item.id),
+        label: item.name,
+        selectedLabel: formatNeighborhoodLabel(item),
+        searchText: neighborhoodSearchText(item, group.label),
       })),
-    [neighborhoods],
-  )
+    }))
+  }, [neighborhoods, value])
 
   return (
     <Combobox

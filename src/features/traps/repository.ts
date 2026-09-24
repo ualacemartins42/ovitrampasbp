@@ -139,8 +139,8 @@ export async function activeTraps(): Promise<Trap[]> {
 }
 
 export function situationToTrapStatus(situation: string | null | undefined): TrapStatus {
-  if (situation === 'ausente') return 'perdida'
-  if (situation === 'danificada') return 'danificada'
-  if (situation === 'seca') return 'sem_alteracao'
+  if (situation === '2' || situation === '4' || situation === 'ausente') return 'perdida'
+  if (situation === '3' || situation === 'danificada') return 'danificada'
+  if (situation === '5' || situation === 'seca') return 'sem_alteracao'
   return 'instalada'
 }

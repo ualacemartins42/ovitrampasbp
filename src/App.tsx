@@ -5,8 +5,10 @@ import { AgentesPage } from '@/pages/admin/AgentesPage'
 import { BairrosPage } from '@/pages/admin/BairrosPage'
 import { CollectionFormPage } from '@/pages/CollectionFormPage'
 import { CollectionsListPage } from '@/pages/CollectionsListPage'
+import { ContagemOvosPage } from '@/pages/ContagemOvosPage'
 import { CycleFormPage } from '@/pages/CycleFormPage'
 import { CyclesPage } from '@/pages/CyclesPage'
+import { EducacaoSaudePage } from '@/pages/EducacaoSaudePage'
 import { HomePage } from '@/pages/HomePage'
 import { LabPanelPage } from '@/pages/LabPanelPage'
 import { LoginPage } from '@/pages/LoginPage'
@@ -34,6 +36,8 @@ export default function App() {
             <Route path="/ciclos/:id" element={<CycleFormPage />} />
             <Route path="/relatorios" element={<RelatoriosPage />} />
             <Route path="/mapa" element={<MapPage />} />
+            <Route path="/contagem-ovos" element={<ContagemOvosPage />} />
+            <Route path="/educacao-saude" element={<EducacaoSaudePage />} />
             <Route path="/coletas" element={<CollectionsListPage />} />
             <Route path="/coletas/nova" element={<CollectionFormPage />} />
             <Route path="/sincronizar" element={<SyncPage />} />

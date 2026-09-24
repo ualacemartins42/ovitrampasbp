@@ -1,23 +1,25 @@
 import { liveQuery } from 'dexie'
-import { Camera, ClipboardPlus, CloudUpload, Earth, FileBarChart, MapPinned, RefreshCw } from 'lucide-react'
+import { Camera, ClipboardPlus, CloudUpload, Earth, FileBarChart, MapPinned, Megaphone, Microscope, RefreshCw } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { useAuth } from '@/features/auth/auth-context'
+import { useLayoutMode } from '@/context/LayoutContext'
 import { useSyncQueue } from '@/hooks/useSyncQueue'
 import { COLLECTION_KIND_LABELS, ROLE_LABELS } from '@/lib/constants'
 import { neighborhoodLabelById } from '@/constants/bairros'
 import { db } from '@/lib/db'
 import { useNeighborhoods } from '@/hooks/useNeighborhoods'
-import { formatDateTime, isSameLocalDay } from '@/lib/utils'
+import { cn, formatDateTime, isSameLocalDay } from '@/lib/utils'
 import type { CollectionRecord } from '@/types/domain'
 
 export function HomePage() {
   const { profile, isAdmin } = useAuth()
+  const { isDesktop } = useLayoutMode()
   const { pendingCollections } = useSyncQueue()
   const [collections, setCollections] = useState<CollectionRecord[]>([])
-  const neighborhoods = useNeighborhoods()
+  const neighborhoods = useNeighborhoods(true)
 
   useEffect(() => {
     if (!profile) return
@@ -72,25 +74,47 @@ export function HomePage() {
             <p className="text-xs text-muted">Troca e retirada</p>
           </Card>
         </Link>
-        <Link to="/relatorios" className="col-span-2 block">
-          <Card className="flex items-center justify-center gap-3 py-5">
-            <FileBarChart className="size-9 text-teal-700" />
-            <div>
-              <p className="font-semibold">Relatórios</p>
-              <p className="text-sm text-muted">Ciclos concluídos para laboratório e vigilância.</p>
-            </div>
-          </Card>
-        </Link>
-        <Link to="/mapa" className="col-span-2 block">
-          <Card className="flex items-center justify-center gap-3 py-5">
-            <Earth className="size-9 text-teal-600" />
-            <div>
-              <p className="font-semibold">Mapa satélite</p>
-              <p className="text-sm text-muted">Ver armadilhas e iniciar ciclo no ponto.</p>
-            </div>
-          </Card>
-        </Link>
       </div>
+
+      <Link to="/relatorios" className="block">
+        <Card className="flex items-center justify-center gap-3 py-5">
+          <FileBarChart className="size-9 text-teal-700" />
+          <div>
+            <p className="font-semibold">Relatórios</p>
+            <p className="text-sm text-muted">Ciclos concluídos para laboratório e vigilância.</p>
+          </div>
+        </Card>
+      </Link>
+
+      <Link to="/mapa" className="block">
+        <Card className="flex items-center justify-center gap-3 py-5">
+          <Earth className="size-9 text-teal-600" />
+          <div>
+            <p className="font-semibold">Mapa satélite</p>
+            <p className="text-sm text-muted">Ver armadilhas e iniciar ciclo no ponto.</p>
+          </div>
+        </Card>
+      </Link>
+
+      <Link to="/contagem-ovos" className="block">
+        <Card className="flex items-center justify-center gap-3 py-5">
+          <Microscope className="size-9 text-indigo-700" />
+          <div>
+            <p className="font-semibold">Contagem de Ovos</p>
+            <p className="text-sm text-muted">Leitura de palhetas e registro de ovos por ciclo.</p>
+          </div>
+        </Card>
+      </Link>
+
+      <Link to="/educacao-saude" className="block">
+        <Card className="flex items-center justify-center gap-3 py-5">
+          <Megaphone className="size-9 text-amber-700" />
+          <div>
+            <p className="font-semibold">Educação em Saúde</p>
+            <p className="text-sm text-muted">Registrar ações educativas e conscientização em campo.</p>
+          </div>
+        </Card>
+      </Link>
 
       <div className="grid grid-cols-2 gap-3">
         <Card>
@@ -137,19 +161,25 @@ export function HomePage() {
         {today.length === 0 ? (
           <Card className="text-sm text-muted">Nenhuma coleta lançada hoje.</Card>
         ) : (
-          today.slice(0, 5).map((item) => (
-            <Card key={item.id} className="flex items-start justify-between gap-3">
-              <div>
-                <p className="font-semibold">{item.trapCode}</p>
-                <p className="text-sm text-muted">
-                  {COLLECTION_KIND_LABELS[item.kind]} · {formatDateTime(item.occurredAt)}
-                </p>
-              </div>
-              <span className="text-xs font-semibold text-primary">
-                {item.syncStatus === 'synced' ? 'Enviado' : 'Local'}
-              </span>
-            </Card>
-          ))
+          <div
+            className={cn(
+              isDesktop ? 'grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3' : 'space-y-2',
+            )}
+          >
+            {today.slice(0, isDesktop ? 9 : 5).map((item) => (
+              <Card key={item.id} className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="font-semibold">{item.trapCode}</p>
+                  <p className="text-sm text-muted">
+                    {COLLECTION_KIND_LABELS[item.kind]} · {formatDateTime(item.occurredAt)}
+                  </p>
+                </div>
+                <span className="text-xs font-semibold text-primary">
+                  {item.syncStatus === 'synced' ? 'Enviado' : 'Local'}
+                </span>
+              </Card>
+            ))}
+          </div>
         )}
       </section>
 

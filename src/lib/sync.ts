@@ -1,6 +1,8 @@
 import { db, enqueueSync, seedOfficialNeighborhoods, seedReferenceDataIfEmpty } from '@/lib/db'
+import { normalizeCycleSituation } from '@/constants/situacoes'
 import { cacheBairrosLocally, cacheNeighborhoodsFromRemote } from '@/services/bairroService'
 import { isSupabaseConfigured, supabase } from '@/lib/supabase'
+import type { EducacaoSaudeRecord } from '@/types/educacao'
 import type { CollectionRecord, CycleRecord, LabResult, Profile, Property, Trap, TrapType } from '@/types/domain'
 import { createId, nowIso } from '@/lib/utils'
 
@@ -80,13 +82,14 @@ function mapCycle(row: {
   install_at: string | null
   install_epi_week: number | null
   install_obs: string | null
+  estrato_liraa?: string | null
   swap_at: string | null
   swap_epi_week: number | null
-  swap_situation: CycleRecord['swapSituation']
+  swap_situation: string | null
   swap_obs: string | null
   remove_at: string | null
   remove_epi_week: number | null
-  remove_situation: CycleRecord['removeSituation']
+  remove_situation: string | null
   remove_obs: string | null
   agent_id: string
   created_at: string
@@ -101,13 +104,14 @@ function mapCycle(row: {
     installAt: row.install_at,
     installEpiWeek: row.install_epi_week,
     installObs: row.install_obs,
+    estratoLiraa: row.estrato_liraa ?? null,
     swapAt: row.swap_at,
     swapEpiWeek: row.swap_epi_week,
-    swapSituation: row.swap_situation,
+    swapSituation: normalizeCycleSituation(row.swap_situation),
     swapObs: row.swap_obs,
     removeAt: row.remove_at,
     removeEpiWeek: row.remove_epi_week,
-    removeSituation: row.remove_situation,
+    removeSituation: normalizeCycleSituation(row.remove_situation),
     removeObs: row.remove_obs,
     agentId: row.agent_id,
     syncStatus: 'synced',
@@ -399,6 +403,98 @@ async function pushTrap(trapId: string): Promise<void> {
   await db.traps.update(trap.id, { syncStatus: 'synced' })
 }
 
+async function uploadEducacaoPhoto(agentId: string, recordId: string, photoId: string): Promise<string> {
+  if (!supabase) throw new Error('Supabase não configurado')
+  const photo = await db.photos.get(photoId)
+  if (!photo) throw new Error('Foto local não encontrada.')
+
+  const extension = photo.mimeType.includes('png') ? 'png' : photo.mimeType.includes('webp') ? 'webp' : 'jpg'
+  const path = `${agentId}/${recordId}/${photoId}.${extension}`
+
+  const { error } = await supabase.storage.from('educacao_fotos').upload(path, photo.blob, {
+    upsert: true,
+    contentType: photo.mimeType,
+  })
+  if (error) throw error
+  return path
+}
+
+async function pushEducacaoSaude(recordId: string): Promise<void> {
+  if (!supabase) throw new Error('Supabase não configurado')
+  const record = await db.educacaoSaude.get(recordId)
+  if (!record) {
+    const { error } = await supabase.from('educacao_saude').delete().eq('id', recordId)
+    if (error) throw error
+    return
+  }
+
+  const photoPaths: string[] = [...record.photoPaths]
+  for (const photoId of record.localPhotoIds) {
+    const already = photoPaths.some((path) => path.includes(photoId))
+    if (already) continue
+    photoPaths.push(await uploadEducacaoPhoto(record.agentId, record.id, photoId))
+  }
+
+  const { error } = await supabase.from('educacao_saude').upsert({
+    id: record.id,
+    trap_code: record.trapCode,
+    trap_id: record.trapId,
+    street: record.street,
+    number: record.number,
+    neighborhood_name: record.neighborhoodName,
+    district: record.district,
+    action_date: record.analysisDate,
+    action_taken: record.observation,
+    egg_count: record.eggCount,
+    cycle_id: record.cycleId,
+    photo_paths: photoPaths,
+    agent_id: record.agentId,
+    updated_at: nowIso(),
+  })
+  if (error) throw error
+
+  await db.educacaoSaude.update(record.id, {
+    syncStatus: 'synced',
+    photoPaths,
+    updatedAt: nowIso(),
+  })
+}
+
+async function pullEducacaoSaude(agentId: string, allAgents: boolean): Promise<void> {
+  if (!supabase) return
+  let query = supabase.from('educacao_saude').select('*').order('action_date', { ascending: false })
+  if (!allAgents) query = query.eq('agent_id', agentId)
+  const { data, error } = await query
+  if (error) throw error
+
+  const local = await db.educacaoSaude.toArray()
+  const pending = new Set(local.filter((item) => item.syncStatus !== 'synced').map((item) => item.id))
+
+  for (const row of data ?? []) {
+    if (pending.has(row.id)) continue
+    const mapped: EducacaoSaudeRecord = {
+      id: row.id,
+      trapCode: row.trap_code,
+      trapId: row.trap_id,
+      cycleId: row.cycle_id ?? null,
+      street: row.street,
+      number: row.number,
+      neighborhoodName: row.neighborhood_name,
+      district: row.district,
+      analysisDate: row.action_date,
+      eggCount: row.egg_count ?? null,
+      observation: row.action_taken,
+      photoPaths: row.photo_paths ?? [],
+      localPhotoIds: [],
+      agentId: row.agent_id,
+      syncStatus: 'synced',
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    }
+    await db.educacaoSaude.put(mapped)
+  }
+}
+
 async function pushCycle(cycleId: string): Promise<void> {
   if (!supabase) throw new Error('Supabase não configurado')
   const cycle = await db.cycles.get(cycleId)
@@ -417,13 +513,14 @@ async function pushCycle(cycleId: string): Promise<void> {
     install_at: cycle.installAt,
     install_epi_week: cycle.installEpiWeek,
     install_obs: cycle.installObs,
+    estrato_liraa: cycle.estratoLiraa,
     swap_at: cycle.swapAt,
     swap_epi_week: cycle.swapEpiWeek,
-    swap_situation: cycle.swapSituation,
+    swap_situation: normalizeCycleSituation(cycle.swapSituation),
     swap_obs: cycle.swapObs,
     remove_at: cycle.removeAt,
     remove_epi_week: cycle.removeEpiWeek,
-    remove_situation: cycle.removeSituation,
+    remove_situation: normalizeCycleSituation(cycle.removeSituation),
     remove_obs: cycle.removeObs,
     agent_id: cycle.agentId,
   })
@@ -503,6 +600,12 @@ export async function processSyncQueue(
           continue
         }
       }
+      if (item.type === 'educacao_saude') {
+        const record = await db.educacaoSaude.get(item.payloadId)
+        if (options.agentId && record && record.agentId !== options.agentId) {
+          continue
+        }
+      }
 
       try {
         await db.syncQueue.update(item.id, { status: 'processing' })
@@ -520,6 +623,8 @@ export async function processSyncQueue(
           await pushTrap(item.payloadId)
         } else if (item.type === 'cycle') {
           await pushCycle(item.payloadId)
+        } else if (item.type === 'educacao_saude') {
+          await pushEducacaoSaude(item.payloadId)
         }
         await db.syncQueue.delete(item.id)
         processed += 1
@@ -549,6 +654,7 @@ export async function pullRemoteData(profile: Profile): Promise<void> {
     pullReferenceTables(),
     pullCollections(profile.id, profile.role !== 'ace'),
     pullCycles(),
+    pullEducacaoSaude(profile.id, profile.role !== 'ace'),
     pullProfiles(),
     profile.role === 'ace' ? Promise.resolve() : pullLabResults(),
   ])

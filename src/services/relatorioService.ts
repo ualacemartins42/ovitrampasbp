@@ -1,4 +1,4 @@
-import { CYCLE_SITUATION_LABELS } from '@/lib/constants'
+import { cycleSituationLabel, normalizeCycleSituation } from '@/lib/constants'
 import { db } from '@/lib/db'
 import { supabase } from '@/lib/supabase'
 import { foldSearchText, formatDate, isoToDateInput, toDateInputValue } from '@/lib/utils'
@@ -38,7 +38,7 @@ function isCompletedCycle(cycle: CycleRecord): boolean {
 }
 
 function situationLabel(value: CycleSituation | null): string {
-  return value ? CYCLE_SITUATION_LABELS[value] : '—'
+  return cycleSituationLabel(value)
 }
 
 function weekLabel(week: number | null | undefined): string {
@@ -151,13 +151,14 @@ export async function refreshCompletedCyclesFromRemote(): Promise<void> {
       installAt: row.install_at,
       installEpiWeek: row.install_epi_week,
       installObs: row.install_obs,
+      estratoLiraa: row.estrato_liraa ?? null,
       swapAt: row.swap_at,
       swapEpiWeek: row.swap_epi_week,
-      swapSituation: row.swap_situation,
+      swapSituation: normalizeCycleSituation(row.swap_situation),
       swapObs: row.swap_obs,
       removeAt: row.remove_at,
       removeEpiWeek: row.remove_epi_week,
-      removeSituation: row.remove_situation,
+      removeSituation: normalizeCycleSituation(row.remove_situation),
       removeObs: row.remove_obs,
       agentId: row.agent_id,
       syncStatus: 'synced',
@@ -204,6 +205,7 @@ export function downloadCompletedCyclesCsv(rows: CompletedCycleReport[]): void {
     'Rua / Endereço',
     'Data Instalação',
     'SE Instalação',
+    'Estrato LIRAa',
     'Data Troca',
     'SE Troca',
     'Situação Troca',
@@ -220,6 +222,7 @@ export function downloadCompletedCyclesCsv(rows: CompletedCycleReport[]): void {
     row.street === '—' ? '' : row.street,
     formatDate(row.cycle.installAt),
     weekLabel(row.cycle.installEpiWeek).replace('—', ''),
+    row.cycle.estratoLiraa ?? '',
     formatDate(row.cycle.swapAt),
     weekLabel(row.cycle.swapEpiWeek).replace('—', ''),
     situationLabel(row.cycle.swapSituation).replace('—', ''),
@@ -248,7 +251,7 @@ export function printCompletedCycles(rows: CompletedCycleReport[]): void {
       <tr>
         <td>${row.cycle.trapCode}</td>
         <td>${row.neighborhood}</td>
-        <td>${formatDate(row.cycle.installAt)} (SE ${weekLabel(row.cycle.installEpiWeek)})</td>
+        <td>${formatDate(row.cycle.installAt)} (SE ${weekLabel(row.cycle.installEpiWeek)})${row.cycle.estratoLiraa ? ` · Estrato ${row.cycle.estratoLiraa}` : ''}</td>
         <td>${formatDate(row.cycle.swapAt)} (SE ${weekLabel(row.cycle.swapEpiWeek)}) · ${situationLabel(row.cycle.swapSituation)}</td>
         <td>${formatDate(row.cycle.removeAt)} (SE ${weekLabel(row.cycle.removeEpiWeek)}) · ${situationLabel(row.cycle.removeSituation)}</td>
         <td>${row.agentName}</td>

@@ -37,7 +37,7 @@ export function MapPage() {
   const userLocationRef = useRef<[number, number] | null>(null)
   const [traps, setTraps] = useState<Trap[]>([])
   const [cycles, setCycles] = useState<CycleRecord[]>([])
-  const neighborhoods = useNeighborhoods()
+  const neighborhoods = useNeighborhoods(true)
 
   useEffect(() => {
     const trapSub = liveQuery(() => db.traps.toArray()).subscribe(setTraps)

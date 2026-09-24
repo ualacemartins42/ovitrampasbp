@@ -1,4 +1,10 @@
-import { BAIRROS_CATALOG_VERSION, BARRA_DO_PIRAI_BAIRROS, BARRA_DO_PIRAI_DISTRITO_OPTIONS } from '@/constants/bairros'
+import {
+  BAIRROS_ATIVOS_SEED,
+  BAIRROS_CATALOG_VERSION,
+  BARRA_DO_PIRAI_BAIRROS,
+  BARRA_DO_PIRAI_DISTRITO_OPTIONS,
+  matchOfficialActiveBairro,
+} from '@/constants/bairros'
 import { db } from '@/lib/db'
 import { supabase } from '@/lib/supabase'
 import { createId, foldSearchText, nowIso } from '@/lib/utils'
@@ -181,9 +187,9 @@ export async function seedRemoteBairrosIfEmpty(): Promise<void> {
   const { count, error } = await supabase.from('bairros').select('id', { count: 'exact', head: true })
   if (error || (count ?? 0) > 0) return
 
-  const payload = BARRA_DO_PIRAI_BAIRROS.map((item) => ({
-    nome: item.name,
-    distrito: item.zone,
+  const payload = BAIRROS_ATIVOS_SEED.map((item) => ({
+    nome: item.nome,
+    distrito: item.distrito,
     ativo: true,
   }))
   const { error: insertError } = await supabase.from('bairros').insert(payload)
@@ -281,21 +287,76 @@ export async function setBairroActive(id: string, ativo: boolean): Promise<void>
   await db.neighborhoods.update(current.id, { active: ativo })
 }
 
-export async function deleteBairro(id: string): Promise<void> {
-  if (supabase && navigator.onLine && isUuid(id)) {
-    const { error } = await supabase.from('bairros').delete().eq('id', id)
-    if (error && !isMissingBairrosTable(error.message)) {
-      throw new Error(error.message)
+export interface ApplyActiveBairrosResult {
+  activated: number
+  deactivated: number
+  inserted: number
+}
+
+/**
+ * Soft-disable: marca ativo=true só para a lista oficial; não apaga registros.
+ * Insere oficiais ausentes e preserva nomes históricos inativos.
+ */
+export async function applyActiveBairrosCatalog(): Promise<ApplyActiveBairrosResult> {
+  const current = await listBairros()
+  let activated = 0
+  let deactivated = 0
+  let inserted = 0
+
+  const matchedSeedNames = new Set<string>()
+  const remoteUpdates: Array<{ id: string; ativo: boolean }> = []
+  const localRows = await db.neighborhoods.toArray()
+  const localByRemoteOrId = new Map<string, Neighborhood>()
+  for (const item of localRows) {
+    if (item.remoteId) localByRemoteOrId.set(item.remoteId, item)
+    localByRemoteOrId.set(String(item.id), item)
+  }
+  const localUpdates: Array<{ id: number; active: boolean }> = []
+
+  for (const bairro of current) {
+    const seed = matchOfficialActiveBairro(bairro.nome, bairro.distrito)
+    const shouldBeActive = seed != null
+    if (seed) matchedSeedNames.add(seed.nome)
+    if (bairro.ativo === shouldBeActive) continue
+
+    if (shouldBeActive) activated += 1
+    else deactivated += 1
+
+    if (isUuid(bairro.id) && supabase && navigator.onLine) {
+      remoteUpdates.push({ id: bairro.id, ativo: shouldBeActive })
     }
-    if (!error) {
-      await listBairros()
-      return
+
+    const local = localByRemoteOrId.get(bairro.id)
+    if (local) localUpdates.push({ id: local.id, active: shouldBeActive })
+  }
+
+  if (supabase && navigator.onLine && remoteUpdates.length > 0) {
+    for (const update of remoteUpdates) {
+      const { error } = await supabase.from('bairros').update({ ativo: update.ativo }).eq('id', update.id)
+      if (error && !isMissingBairrosTable(error.message)) {
+        throw new Error(error.message)
+      }
     }
   }
-  const local = await db.neighborhoods.toArray()
-  const current = local.find((item) => item.remoteId === id || String(item.id) === id)
-  if (!current) throw new Error('Bairro não encontrado neste aparelho.')
-  await db.neighborhoods.delete(current.id)
+
+  if (localUpdates.length > 0) {
+    await db.transaction('rw', db.neighborhoods, async () => {
+      for (const update of localUpdates) {
+        await db.neighborhoods.update(update.id, { active: update.active })
+      }
+    })
+  }
+
+  for (const seed of BAIRROS_ATIVOS_SEED) {
+    if (matchedSeedNames.has(seed.nome)) continue
+    const already = current.some((item) => matchOfficialActiveBairro(item.nome, item.distrito)?.nome === seed.nome)
+    if (already) continue
+    await createBairro({ nome: seed.nome, distrito: seed.distrito })
+    inserted += 1
+  }
+
+  await listBairros()
+  return { activated, deactivated, inserted }
 }
 
 export function distritoOptions(existing: Bairro[] = []): string[] {

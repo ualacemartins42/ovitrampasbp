@@ -1,6 +1,6 @@
 import { MapPinned, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { CYCLE_SITUATION_LABELS } from '@/lib/constants'
+import { cycleSituationLabel } from '@/lib/constants'
 import { googleMapsUrl } from '@/lib/geo'
 import { formatDate } from '@/lib/utils'
 import type { CompletedCycleReport } from '@/services/relatorioService'
@@ -20,12 +20,14 @@ function Stage({
   week,
   situation,
   observations,
+  estratoLiraa,
 }: {
   title: string
   date: string | null
   week: number | null
   situation?: string | null
   observations: string | null
+  estratoLiraa?: string | null
 }) {
   return (
     <section className="rounded-xl border border-line bg-surface p-3">
@@ -33,6 +35,12 @@ function Stage({
       <p className="mt-1 text-sm text-muted">
         {formatDate(date)} · {weekLabel(week)}
       </p>
+      {estratoLiraa ? (
+        <p className="text-sm text-ink">
+          <span className="font-medium">Estrato LIRAa: </span>
+          {estratoLiraa}
+        </p>
+      ) : null}
       {situation ? <p className="text-sm text-ink">{situation}</p> : null}
       {observations ? <p className="mt-1 text-sm text-muted">{observations}</p> : <p className="mt-1 text-xs text-muted">Sem observações.</p>}
     </section>
@@ -93,19 +101,25 @@ export function CicloDetalhesModal({ report, onClose }: CicloDetalhesModalProps)
         )}
 
         <div className="mt-4 space-y-2">
-          <Stage title="1. Instalação" date={cycle.installAt} week={cycle.installEpiWeek} observations={cycle.installObs} />
+          <Stage
+            title="1. Instalação"
+            date={cycle.installAt}
+            week={cycle.installEpiWeek}
+            observations={cycle.installObs}
+            estratoLiraa={cycle.estratoLiraa}
+          />
           <Stage
             title="2. Troca de palheta"
             date={cycle.swapAt}
             week={cycle.swapEpiWeek}
-            situation={cycle.swapSituation ? CYCLE_SITUATION_LABELS[cycle.swapSituation] : '—'}
+            situation={cycleSituationLabel(cycle.swapSituation)}
             observations={cycle.swapObs}
           />
           <Stage
             title="3. Retirada"
             date={cycle.removeAt}
             week={cycle.removeEpiWeek}
-            situation={cycle.removeSituation ? CYCLE_SITUATION_LABELS[cycle.removeSituation] : '—'}
+            situation={cycleSituationLabel(cycle.removeSituation)}
             observations={cycle.removeObs}
           />
         </div>

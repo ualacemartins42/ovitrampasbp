@@ -17,6 +17,7 @@ export interface CycleFormValues {
   neighborhoodName: string
   installDate: string
   installObs: string
+  estratoLiraa: string
   swapDate: string
   swapSituation: CycleSituation | ''
   swapObs: string
@@ -79,6 +80,7 @@ export async function saveCycleStage(
       installAt: occurredAt,
       installEpiWeek: week,
       installObs: values.installObs.trim() || null,
+      estratoLiraa: values.estratoLiraa.trim() || null,
       swapAt: null,
       swapEpiWeek: null,
       swapSituation: null,
@@ -102,6 +104,7 @@ export async function saveCycleStage(
       status: 'trocada',
       installAt: installOccurred.iso,
       installEpiWeek: installOccurred.week,
+      estratoLiraa: values.estratoLiraa.trim() || cycle.estratoLiraa,
       swapAt: occurredAt,
       swapEpiWeek: week,
       swapSituation: values.swapSituation || null,
@@ -113,7 +116,7 @@ export async function saveCycleStage(
     }
   } else if (cycle.status === 'trocada') {
     kind = 'recolhimento'
-    trapStatus = values.removeSituation === 'normal' ? 'recolhida' : situationToTrapStatus(values.removeSituation)
+    trapStatus = values.removeSituation === '0' || values.removeSituation === 'normal' ? 'recolhida' : situationToTrapStatus(values.removeSituation)
     ;({ iso: occurredAt, week } = occurredFromDateInput(values.removeDate))
     cycle = {
       ...cycle,

@@ -6,22 +6,24 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Select } from '@/components/ui/field'
+import { useLayoutMode } from '@/context/LayoutContext'
 import { useAuth } from '@/features/auth/auth-context'
 import { canDeleteCollection, deleteCollection } from '@/features/collections/repository'
 import { COLLECTION_KIND_LABELS, TRAP_STATUS_LABELS } from '@/lib/constants'
 import { neighborhoodLabelById } from '@/constants/bairros'
 import { db } from '@/lib/db'
 import { useNeighborhoods } from '@/hooks/useNeighborhoods'
-import { formatDateTime } from '@/lib/utils'
+import { cn, formatDateTime } from '@/lib/utils'
 import type { CollectionRecord, LocalSyncStatus } from '@/types/domain'
 
 export function CollectionsListPage() {
   const { profile, isAdmin } = useAuth()
+  const { isDesktop } = useLayoutMode()
   const [items, setItems] = useState<CollectionRecord[]>([])
   const [status, setStatus] = useState<'all' | LocalSyncStatus>('all')
   const [selected, setSelected] = useState<CollectionRecord | null>(null)
   const [submitting, setSubmitting] = useState(false)
-  const neighborhoods = useNeighborhoods()
+  const neighborhoods = useNeighborhoods(true)
 
   useEffect(() => {
     const query = liveQuery(async () => {
@@ -69,39 +71,45 @@ export function CollectionsListPage() {
       {filtered.length === 0 ? (
         <Card className="text-sm text-muted">Nenhum registro encontrado.</Card>
       ) : (
-        filtered.map((item) => {
-          const showDelete = canDeleteCollection(item, profile, isAdmin)
-          return (
-            <Card key={item.id}>
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="font-semibold">{item.trapCode}</p>
-                  <p className="text-sm text-muted">
-                    {COLLECTION_KIND_LABELS[item.kind]} · {TRAP_STATUS_LABELS[item.trapStatus]}
-                  </p>
-                  <p className="text-sm text-muted">{neighborhoodLabelById(neighborhoods, item.neighborhoodId)}</p>
-                  <p className="text-sm text-muted">{formatDateTime(item.occurredAt)}</p>
-                  {item.paddleCode ? <p className="text-sm">Palheta {item.paddleCode}</p> : null}
+        <div
+          className={cn(
+            isDesktop ? 'grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3' : 'space-y-3',
+          )}
+        >
+          {filtered.map((item) => {
+            const showDelete = canDeleteCollection(item, profile, isAdmin)
+            return (
+              <Card key={item.id} className="h-full">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-semibold">{item.trapCode}</p>
+                    <p className="text-sm text-muted">
+                      {COLLECTION_KIND_LABELS[item.kind]} · {TRAP_STATUS_LABELS[item.trapStatus]}
+                    </p>
+                    <p className="text-sm text-muted">{neighborhoodLabelById(neighborhoods, item.neighborhoodId)}</p>
+                    <p className="text-sm text-muted">{formatDateTime(item.occurredAt)}</p>
+                    {item.paddleCode ? <p className="text-sm">Palheta {item.paddleCode}</p> : null}
+                  </div>
+                  <div className="flex shrink-0 flex-col items-end gap-2">
+                    <span className="text-xs font-semibold text-primary">
+                      {item.syncStatus === 'synced' ? 'Enviado' : item.syncStatus === 'error' ? 'Erro' : 'Local'}
+                    </span>
+                    {showDelete ? (
+                      <button
+                        type="button"
+                        className="rounded-lg p-1 text-red-600 hover:bg-red-50 hover:text-red-800"
+                        aria-label={`Excluir coleta ${item.trapCode}`}
+                        onClick={() => setSelected(item)}
+                      >
+                        <Trash2 className="size-4" />
+                      </button>
+                    ) : null}
+                  </div>
                 </div>
-                <div className="flex shrink-0 flex-col items-end gap-2">
-                  <span className="text-xs font-semibold text-primary">
-                    {item.syncStatus === 'synced' ? 'Enviado' : item.syncStatus === 'error' ? 'Erro' : 'Local'}
-                  </span>
-                  {showDelete ? (
-                    <button
-                      type="button"
-                      className="rounded-lg p-1 text-red-600 hover:bg-red-50 hover:text-red-800"
-                      aria-label={`Excluir coleta ${item.trapCode}`}
-                      onClick={() => setSelected(item)}
-                    >
-                      <Trash2 className="size-4" />
-                    </button>
-                  ) : null}
-                </div>
-              </div>
-            </Card>
-          )
-        })
+              </Card>
+            )
+          })}
+        </div>
       )}
       <Link to="/coletas/nova" className="block text-center text-sm font-semibold text-primary">
         Lançar nova coleta

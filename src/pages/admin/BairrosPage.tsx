@@ -1,4 +1,4 @@
-import { Pencil, Plus, Search, Trash2, MapPinned, UserCheck, UserX } from 'lucide-react'
+import { Pencil, Plus, Search, MapPinned, UserCheck, UserX, RefreshCw } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { BairroModal } from '@/components/admin/BairroModal'
@@ -6,12 +6,12 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/field'
-import { formatNeighborhoodLabel, districtGroupLabel } from '@/constants/bairros'
+import { formatNeighborhoodLabel, districtGroupLabel, BAIRROS_ATIVOS_OFICIAIS } from '@/constants/bairros'
 import { useAuth } from '@/features/auth/auth-context'
 import { foldSearchText } from '@/lib/utils'
 import {
+  applyActiveBairrosCatalog,
   createBairro,
-  deleteBairro,
   listBairros,
   setBairroActive,
   updateBairro,
@@ -24,11 +24,11 @@ export function BairrosPage() {
   const [loading, setLoading] = useState(true)
   const [query, setQuery] = useState('')
   const [formOpen, setFormOpen] = useState(false)
-  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [deactivateOpen, setDeactivateOpen] = useState(false)
   const [selected, setSelected] = useState<Bairro | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
-  const [deleteError, setDeleteError] = useState<string | null>(null)
+  const [deactivateError, setDeactivateError] = useState<string | null>(null)
 
   useEffect(() => {
     void loadBairros()
@@ -73,6 +73,9 @@ export function BairrosPage() {
     return order.map((label) => ({ label, items: groups.get(label) ?? [] }))
   }, [bairros, query])
 
+  const activeCount = bairros.filter((item) => item.ativo).length
+  const inactiveCount = bairros.length - activeCount
+
   function openCreate() {
     setSelected(null)
     setFormError(null)
@@ -85,10 +88,10 @@ export function BairrosPage() {
     setFormOpen(true)
   }
 
-  function openDelete(bairro: Bairro) {
+  function openDeactivate(bairro: Bairro) {
     setSelected(bairro)
-    setDeleteError(null)
-    setDeleteOpen(true)
+    setDeactivateError(null)
+    setDeactivateOpen(true)
   }
 
   async function handleSave(values: { nome: string; distrito: string }) {
@@ -118,14 +121,14 @@ export function BairrosPage() {
   async function handleDeactivate() {
     if (!selected) return
     setSubmitting(true)
-    setDeleteError(null)
+    setDeactivateError(null)
     try {
       await setBairroActive(selected.id, false)
       toast.success('Bairro inativado. O histórico de coletas anteriores é preservado.')
-      setDeleteOpen(false)
+      setDeactivateOpen(false)
       await loadBairros()
     } catch (error) {
-      setDeleteError(error instanceof Error ? error.message : 'Falha ao inativar.')
+      setDeactivateError(error instanceof Error ? error.message : 'Falha ao inativar.')
     } finally {
       setSubmitting(false)
     }
@@ -141,17 +144,17 @@ export function BairrosPage() {
     }
   }
 
-  async function handleDelete() {
-    if (!selected) return
+  async function handleApplyOfficialList() {
+    if (!isAdmin) return
     setSubmitting(true)
-    setDeleteError(null)
     try {
-      await deleteBairro(selected.id)
-      toast.success('Bairro excluído.')
-      setDeleteOpen(false)
+      const result = await applyActiveBairrosCatalog()
+      toast.success(
+        `Lista oficial aplicada: ${result.activated} ativados, ${result.deactivated} inativados, ${result.inserted} inseridos. Nenhum registro foi apagado.`,
+      )
       await loadBairros()
     } catch (error) {
-      setDeleteError(error instanceof Error ? error.message : 'Não foi possível excluir. Inative para preservar o histórico.')
+      toast.error(error instanceof Error ? error.message : 'Falha ao aplicar lista oficial.')
     } finally {
       setSubmitting(false)
     }
@@ -162,12 +165,21 @@ export function BairrosPage() {
       <div className="flex items-start justify-between gap-3">
         <div>
           <h1 className="text-xl font-semibold">Gerenciar bairros</h1>
-          <p className="text-sm text-muted">Cadastro de bairros e distritos de Barra do Piraí.</p>
+          <p className="text-sm text-muted">
+            Soft-disable: {activeCount} ativos · {inactiveCount} inativos · lista oficial com {BAIRROS_ATIVOS_OFICIAIS.length}{' '}
+            bairros.
+          </p>
         </div>
-        <Button size="sm" className="shrink-0" onClick={openCreate} disabled={!isAdmin}>
-          <Plus className="size-4" />
-          Novo
-        </Button>
+        <div className="flex shrink-0 flex-wrap justify-end gap-2">
+          <Button size="sm" variant="secondary" disabled={!isAdmin || submitting} onClick={() => void handleApplyOfficialList()}>
+            <RefreshCw className="size-4" />
+            Aplicar lista oficial
+          </Button>
+          <Button size="sm" className="shrink-0" onClick={openCreate} disabled={!isAdmin}>
+            <Plus className="size-4" />
+            Novo
+          </Button>
+        </div>
       </div>
 
       <div className="relative">
@@ -208,7 +220,7 @@ export function BairrosPage() {
                     Editar
                   </Button>
                   {bairro.ativo ? (
-                    <Button size="sm" variant="ghost" disabled={!isAdmin} onClick={() => openDelete(bairro)}>
+                    <Button size="sm" variant="ghost" disabled={!isAdmin} onClick={() => openDeactivate(bairro)}>
                       <UserX className="size-3.5" />
                       Inativar
                     </Button>
@@ -218,16 +230,6 @@ export function BairrosPage() {
                       Ativar
                     </Button>
                   )}
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="text-danger"
-                    disabled={!isAdmin}
-                    onClick={() => openDelete(bairro)}
-                  >
-                    <Trash2 className="size-3.5" />
-                    Excluir
-                  </Button>
                 </div>
               </Card>
             ))}
@@ -245,26 +247,23 @@ export function BairrosPage() {
         onSubmit={handleSave}
       />
 
-      {deleteOpen && selected ? (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 p-4 sm:items-center" onClick={() => setDeleteOpen(false)}>
+      {deactivateOpen && selected ? (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 p-4 sm:items-center" onClick={() => setDeactivateOpen(false)}>
           <div
             className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl"
             onClick={(event) => event.stopPropagation()}
           >
-            <h2 className="text-lg font-semibold text-ink">Remover ou inativar bairro</h2>
+            <h2 className="text-lg font-semibold text-ink">Inativar bairro</h2>
             <p className="mt-2 text-sm text-muted">
-              <span className="font-medium text-ink">{selected.nome}</span> · {selected.distrito}. Inativar preserva
-              coletas e armadilhas já registradas.
+              <span className="font-medium text-ink">{selected.nome}</span> · {selected.distrito}. O cadastro permanece no
+              banco para preservar coletas e ovitrampas já registradas; apenas deixa de aparecer nos formulários.
             </p>
-            {deleteError ? <p className="mt-3 text-sm text-danger">{deleteError}</p> : null}
+            {deactivateError ? <p className="mt-3 text-sm text-danger">{deactivateError}</p> : null}
             <div className="mt-5 space-y-2">
               <Button className="w-full" variant="secondary" disabled={submitting} onClick={() => void handleDeactivate()}>
                 {submitting ? 'Processando...' : 'Inativar bairro'}
               </Button>
-              <Button className="w-full" variant="danger" disabled={submitting} onClick={() => void handleDelete()}>
-                Excluir cadastro
-              </Button>
-              <Button className="w-full" variant="ghost" disabled={submitting} onClick={() => setDeleteOpen(false)}>
+              <Button className="w-full" variant="ghost" disabled={submitting} onClick={() => setDeactivateOpen(false)}>
                 Cancelar
               </Button>
             </div>

@@ -6,32 +6,92 @@ import { Card } from '@/components/ui/card'
 import { Field, Input, Select } from '@/components/ui/field'
 import { deleteCycle, saveCycleStage } from '@/features/cycles/repository'
 import { useAuth } from '@/features/auth/auth-context'
-import { CYCLE_SITUATION_LABELS } from '@/lib/constants'
+import { useLayoutMode } from '@/context/LayoutContext'
+import { CYCLE_SITUATION_OPTIONS, normalizeCycleSituation } from '@/lib/constants'
 import { formatNeighborhoodLabel } from '@/constants/bairros'
 import { db } from '@/lib/db'
 import { epidemiologicalWeekLabel } from '@/lib/epiWeek'
 import { useNeighborhoods } from '@/hooks/useNeighborhoods'
-import { addDaysToDateInput, isDateInputBefore, isoToDateInput, parseDateInput, toDateInputValue } from '@/lib/utils'
+import { addDaysToDateInput, cn, isDateInputBefore, isoToDateInput, parseDateInput, toDateInputValue } from '@/lib/utils'
 import type { CycleRecord, CycleSituation, Trap } from '@/types/domain'
+
+function OutraObservacaoToggle({
+  label,
+  value,
+  onChange,
+  open,
+  onOpenChange,
+  readOnly = false,
+}: {
+  label: string
+  value: string
+  onChange: (value: string) => void
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  readOnly?: boolean
+}) {
+  return (
+    <div className="space-y-2">
+      <button
+        type="button"
+        role="checkbox"
+        aria-checked={open}
+        onClick={() => onOpenChange(!open)}
+        className={cn(
+          'inline-flex w-full items-center gap-2 rounded-xl border px-3 py-2.5 text-left text-sm font-semibold transition',
+          open
+            ? 'border-primary bg-teal-50 text-primary'
+            : 'border-line bg-white text-ink hover:bg-teal-50',
+        )}
+      >
+        <span
+          aria-hidden
+          className={cn(
+            'flex size-5 shrink-0 items-center justify-center rounded border text-xs',
+            open ? 'border-primary bg-primary text-primary-foreground' : 'border-line bg-white text-transparent',
+          )}
+        >
+          ✓
+        </span>
+        Outra observação
+      </button>
+      {open ? (
+        <Field label={label}>
+          <Input
+            readOnly={readOnly}
+            className={readOnly ? 'bg-surface' : undefined}
+            value={value}
+            onChange={(event) => onChange(event.target.value)}
+          />
+        </Field>
+      ) : null}
+    </div>
+  )
+}
 
 export function CycleFormPage() {
   const { id } = useParams()
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const { profile } = useAuth()
+  const { isDesktop } = useLayoutMode()
   const [traps, setTraps] = useState<Trap[]>([])
-  const neighborhoods = useNeighborhoods()
+  const neighborhoods = useNeighborhoods(true)
   const [cycle, setCycle] = useState<CycleRecord | null>(null)
   const [trapCode, setTrapCode] = useState(searchParams.get('armadilha') ?? '')
   const [neighborhoodName, setNeighborhoodName] = useState('')
   const [installObs, setInstallObs] = useState('')
+  const [showInstallObs, setShowInstallObs] = useState(false)
+  const [estratoLiraa, setEstratoLiraa] = useState('')
   const [installDate, setInstallDate] = useState(() => toDateInputValue(new Date()))
   const [swapDate, setSwapDate] = useState(() => addDaysToDateInput(toDateInputValue(new Date()), 6))
   const [swapSituation, setSwapSituation] = useState<CycleSituation | ''>('')
   const [swapObs, setSwapObs] = useState('')
+  const [showSwapObs, setShowSwapObs] = useState(false)
   const [removeDate, setRemoveDate] = useState(() => addDaysToDateInput(toDateInputValue(new Date()), 12))
   const [removeSituation, setRemoveSituation] = useState<CycleSituation | ''>('')
   const [removeObs, setRemoveObs] = useState('')
+  const [showRemoveObs, setShowRemoveObs] = useState(false)
   const [saving, setSaving] = useState(false)
 
   const today = useMemo(() => new Date(), [])
@@ -57,15 +117,21 @@ export function CycleFormPage() {
       setNeighborhoodName(row.neighborhoodName ?? '')
       setInstallDate(isoToDateInput(row.installAt))
       setInstallObs(row.installObs ?? '')
+      setShowInstallObs(Boolean(row.installObs?.trim()))
+      setEstratoLiraa(row.estratoLiraa ?? '')
       const nextSwapDate = row.swapAt
         ? isoToDateInput(row.swapAt)
         : addDaysToDateInput(isoToDateInput(row.installAt), 6)
       setSwapDate(nextSwapDate)
-      setSwapSituation(row.swapSituation ?? '')
+      const nextSwapSituation = normalizeCycleSituation(row.swapSituation) ?? ''
+      setSwapSituation(nextSwapSituation)
       setSwapObs(row.swapObs ?? '')
+      setShowSwapObs(Boolean(row.swapObs?.trim()) || nextSwapSituation === '9')
       setRemoveDate(row.removeAt ? isoToDateInput(row.removeAt) : addDaysToDateInput(nextSwapDate, 6))
-      setRemoveSituation(row.removeSituation ?? '')
+      const nextRemoveSituation = normalizeCycleSituation(row.removeSituation) ?? ''
+      setRemoveSituation(nextRemoveSituation)
       setRemoveObs(row.removeObs ?? '')
+      setShowRemoveObs(Boolean(row.removeObs?.trim()) || nextRemoveSituation === '9')
     })
   }, [id, navigate])
 
@@ -94,6 +160,14 @@ export function CycleFormPage() {
     if (!canEditRemoveDate) return
     setRemoveDate(addDaysToDateInput(swapDate, 6, today))
   }, [swapDate, canEditRemoveDate, today])
+
+  useEffect(() => {
+    if (swapSituation === '9') setShowSwapObs(true)
+  }, [swapSituation])
+
+  useEffect(() => {
+    if (removeSituation === '9') setShowRemoveObs(true)
+  }, [removeSituation])
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault()
@@ -128,13 +202,14 @@ export function CycleFormPage() {
         trapCode,
         neighborhoodName,
         installDate,
-        installObs,
+        installObs: showInstallObs ? installObs : '',
+        estratoLiraa,
         swapDate,
         swapSituation,
-        swapObs,
+        swapObs: showSwapObs ? swapObs : '',
         removeDate,
         removeSituation,
-        removeObs,
+        removeObs: showRemoveObs ? removeObs : '',
       })
       toast.success('Etapa do ciclo salva.')
       navigate('/ciclos')
@@ -168,7 +243,7 @@ export function CycleFormPage() {
       </div>
 
       <Card className="space-y-3">
-        <div className="grid grid-cols-2 gap-2">
+        <div className={cn('grid gap-2', isDesktop ? 'grid-cols-3' : 'grid-cols-2')}>
           <Field label="Armadilha *">
             <Select
               required
@@ -191,6 +266,7 @@ export function CycleFormPage() {
         </div>
       </Card>
 
+      <div className={cn(isDesktop ? 'grid grid-cols-1 gap-4 xl:grid-cols-3' : 'space-y-4')}>
       <Card className="space-y-3">
         <h2 className="border-b border-line pb-1 font-semibold">1. Instalação</h2>
         <div className="grid grid-cols-2 gap-2">
@@ -211,12 +287,21 @@ export function CycleFormPage() {
             />
           </Field>
         </div>
-        <Field label="Observações da instalação">
+        <OutraObservacaoToggle
+          label="Observações da instalação"
+          value={installObs}
+          onChange={setInstallObs}
+          open={showInstallObs}
+          onOpenChange={setShowInstallObs}
+          readOnly={!isNew}
+        />
+        <Field label="Estrato LIRAa">
           <Input
             readOnly={!isNew}
             className={isNew ? undefined : 'bg-surface'}
-            value={installObs}
-            onChange={(event) => setInstallObs(event.target.value)}
+            value={estratoLiraa}
+            inputMode="numeric"
+            onChange={(event) => setEstratoLiraa(event.target.value)}
           />
         </Field>
       </Card>
@@ -246,24 +331,28 @@ export function CycleFormPage() {
             <Select
               disabled={registeringRemove}
               value={swapSituation}
-              onChange={(event) => setSwapSituation(event.target.value as CycleSituation | '')}
+              onChange={(event) => {
+                const next = event.target.value as CycleSituation | ''
+                setSwapSituation(next)
+                if (next === '9') setShowSwapObs(true)
+              }}
             >
               <option value="">Selecione...</option>
-              {Object.entries(CYCLE_SITUATION_LABELS).map(([value, label]) => (
+              {CYCLE_SITUATION_OPTIONS.map(({ value, label }) => (
                 <option key={value} value={value}>
                   {label}
                 </option>
               ))}
             </Select>
           </Field>
-          <Field label="Observações da troca">
-            <Input
-              readOnly={registeringRemove}
-              className={registeringRemove ? 'bg-surface' : undefined}
-              value={swapObs}
-              onChange={(event) => setSwapObs(event.target.value)}
-            />
-          </Field>
+          <OutraObservacaoToggle
+            label="Observações da troca"
+            value={swapObs}
+            onChange={setSwapObs}
+            open={showSwapObs}
+            onOpenChange={setShowSwapObs}
+            readOnly={registeringRemove}
+          />
         </Card>
       ) : null}
 
@@ -293,21 +382,30 @@ export function CycleFormPage() {
           <Field label="Situação encontrada">
             <Select
               value={removeSituation}
-              onChange={(event) => setRemoveSituation(event.target.value as CycleSituation | '')}
+              onChange={(event) => {
+                const next = event.target.value as CycleSituation | ''
+                setRemoveSituation(next)
+                if (next === '9') setShowRemoveObs(true)
+              }}
             >
               <option value="">Selecione...</option>
-              {Object.entries(CYCLE_SITUATION_LABELS).map(([value, label]) => (
+              {CYCLE_SITUATION_OPTIONS.map(({ value, label }) => (
                 <option key={value} value={value}>
                   {label}
                 </option>
               ))}
             </Select>
           </Field>
-          <Field label="Observações da retirada">
-            <Input value={removeObs} onChange={(event) => setRemoveObs(event.target.value)} />
-          </Field>
+          <OutraObservacaoToggle
+            label="Observações da retirada"
+            value={removeObs}
+            onChange={setRemoveObs}
+            open={showRemoveObs}
+            onOpenChange={setShowRemoveObs}
+          />
         </Card>
       ) : null}
+      </div>
 
       <div className="flex gap-2">
         <Button type="submit" className="flex-1" disabled={saving || (registeringRemove && removeDateBeforeSwap)}>

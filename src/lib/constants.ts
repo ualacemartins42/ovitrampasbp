@@ -2,12 +2,18 @@ export type { AppRole } from '@/types/domain'
 import type {
   AppRole,
   CollectionKind,
-  CycleSituation,
   CycleStatus,
   MosquitoSpecies,
   TrapAreaType,
   TrapStatus,
 } from '@/types/domain'
+
+export {
+  CYCLE_SITUATION_LABELS,
+  CYCLE_SITUATION_OPTIONS,
+  cycleSituationLabel,
+  normalizeCycleSituation,
+} from '@/constants/situacoes'
 
 export const ROLE_LABELS: Record<AppRole, string> = {
   ace: 'Agente de Combate às Endemias',
@@ -52,13 +58,6 @@ export const CYCLE_STATUS_LABELS: Record<CycleStatus, string> = {
 export const CYCLE_STATUS_ACTION: Record<Exclude<CycleStatus, 'finalizada'>, string> = {
   instalada: 'Aguardando troca',
   trocada: 'Aguardando retirada',
-}
-
-export const CYCLE_SITUATION_LABELS: Record<CycleSituation, string> = {
-  normal: 'Normal (com água)',
-  seca: 'Seca',
-  ausente: 'Ausente/Perdida',
-  danificada: 'Danificada',
 }
 
 export const BARRA_DO_PIRAI_CENTER: [number, number] = [-22.4701, -43.8581]

@@ -8,20 +8,22 @@ import { Card } from '@/components/ui/card'
 import { Field, Input, Select, Textarea } from '@/components/ui/field'
 import { NeighborhoodSelect } from '@/components/forms/NeighborhoodSelect'
 import { neighborhoodLabelById } from '@/constants/bairros'
+import { useLayoutMode } from '@/context/LayoutContext'
 import { useAuth } from '@/features/auth/auth-context'
 import { saveCollection } from '@/features/collections/repository'
 import { COLLECTION_KIND_LABELS, TRAP_STATUS_LABELS } from '@/lib/constants'
 import { db } from '@/lib/db'
 import { captureCoordinates } from '@/lib/geo'
 import { useNeighborhoods } from '@/hooks/useNeighborhoods'
-import { toDateTimeLocalValue } from '@/lib/utils'
+import { cn, toDateTimeLocalValue } from '@/lib/utils'
 import type { CollectionFormValues, TrapType } from '@/types/domain'
 
 export function CollectionFormPage() {
   const { profile } = useAuth()
+  const { isDesktop } = useLayoutMode()
   const navigate = useNavigate()
   const photoInputRef = useRef<HTMLInputElement>(null)
-  const neighborhoods = useNeighborhoods()
+  const neighborhoods = useNeighborhoods(true)
   const [trapTypes, setTrapTypes] = useState<TrapType[]>([])
   const [photo, setPhoto] = useState<Blob | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
@@ -168,78 +170,88 @@ export function CollectionFormPage() {
         </p>
       </Card>
 
-      <Field label="Tipo de registro">
-        <Select {...register('kind')}>
-          {Object.entries(COLLECTION_KIND_LABELS).map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
-        </Select>
-      </Field>
+      <div className={cn(isDesktop ? 'grid grid-cols-2 gap-4 xl:grid-cols-3' : 'space-y-4')}>
+        <Field label="Tipo de registro">
+          <Select {...register('kind')}>
+            {Object.entries(COLLECTION_KIND_LABELS).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </Select>
+        </Field>
 
-      <Field label="Código / QR da armadilha">
-        <div className="flex gap-2">
-          <Input
-            {...register('trapCode')}
-            placeholder="Ex: OVT-0142"
-            onBlur={(event) => void onTrapCodeBlur(event.target.value)}
-          />
-          <Button variant="secondary" onClick={() => void onScanQr()} aria-label="Ler QR Code">
-            <QrCode className="size-5" />
-          </Button>
-        </div>
-      </Field>
+        <Field label="Código / QR da armadilha">
+          <div className="flex gap-2">
+            <Input
+              {...register('trapCode')}
+              placeholder="Ex: OVT-0142"
+              onBlur={(event) => void onTrapCodeBlur(event.target.value)}
+            />
+            <Button type="button" variant="secondary" onClick={() => void onScanQr()} aria-label="Ler QR Code">
+              <QrCode className="size-5" />
+            </Button>
+          </div>
+        </Field>
 
-      <Field label="Tipo de armadilha">
-        <Select {...register('trapTypeId')}>
-          {trapTypes.map((type) => (
-            <option key={type.id} value={type.id}>
-              {type.name}
-            </option>
-          ))}
-        </Select>
-      </Field>
+        <Field label="Tipo de armadilha">
+          <Select {...register('trapTypeId')}>
+            {trapTypes.map((type) => (
+              <option key={type.id} value={type.id}>
+                {type.name}
+              </option>
+            ))}
+          </Select>
+        </Field>
 
-      <Field label="Status da armadilha">
-        <Select {...register('trapStatus')}>
-          {Object.entries(TRAP_STATUS_LABELS).map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
-        </Select>
-      </Field>
+        <Field label="Status da armadilha">
+          <Select {...register('trapStatus')}>
+            {Object.entries(TRAP_STATUS_LABELS).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </Select>
+        </Field>
 
-      <Field label="Data e hora">
-        <Input type="datetime-local" {...register('occurredAt')} />
-      </Field>
+        <Field label="Data e hora">
+          <Input type="datetime-local" {...register('occurredAt')} />
+        </Field>
 
-      <div className="grid grid-cols-3 gap-2">
-        <div className="col-span-2">
-          <Field label="Rua">
-            <Input {...register('street')} />
+        <div className={cn('grid grid-cols-3 gap-2', isDesktop && 'col-span-2 xl:col-span-1')}>
+          <div className="col-span-2">
+            <Field label="Rua">
+              <Input {...register('street')} />
+            </Field>
+          </div>
+          <Field label="Nº">
+            <Input {...register('number')} />
           </Field>
         </div>
-        <Field label="Nº">
-          <Input {...register('number')} />
+
+        <Field label="Bairro / distrito">
+          <NeighborhoodSelect
+            neighborhoods={neighborhoods}
+            value={watch('neighborhoodId')}
+            onChange={(next) => setValue('neighborhoodId', next, { shouldDirty: true, shouldValidate: true })}
+          />
+        </Field>
+
+        <Field label="Complemento">
+          <Input {...register('complement')} />
+        </Field>
+        <Field label="Ponto de referência">
+          <Input {...register('referencePoint')} />
+        </Field>
+
+        <Field label="Código da palheta / amostra">
+          <Input {...register('paddleCode')} placeholder="Etiqueta do laboratório" />
+        </Field>
+
+        <Field label="Quantidade estimada de ovos (opcional)">
+          <Input type="number" min={0} inputMode="numeric" {...register('estimatedEggs')} />
         </Field>
       </div>
-
-      <Field label="Bairro / distrito">
-        <NeighborhoodSelect
-          neighborhoods={neighborhoods}
-          value={watch('neighborhoodId')}
-          onChange={(next) => setValue('neighborhoodId', next, { shouldDirty: true, shouldValidate: true })}
-        />
-      </Field>
-
-      <Field label="Complemento">
-        <Input {...register('complement')} />
-      </Field>
-      <Field label="Ponto de referência">
-        <Input {...register('referencePoint')} />
-      </Field>
 
       <Card className="space-y-3">
         <div className="flex items-center justify-between gap-3">
@@ -247,7 +259,7 @@ export function CollectionFormPage() {
             <p className="font-semibold">Coordenadas GPS</p>
             <p className="text-xs text-muted">Usa o GPS do celular, mesmo sem internet.</p>
           </div>
-          <Button variant="secondary" onClick={() => void onCaptureGps()}>
+          <Button type="button" variant="secondary" onClick={() => void onCaptureGps()}>
             <MapPin className="size-4" />
             Capturar
           </Button>
@@ -264,14 +276,6 @@ export function CollectionFormPage() {
         ) : null}
       </Card>
 
-      <Field label="Código da palheta / amostra">
-        <Input {...register('paddleCode')} placeholder="Etiqueta do laboratório" />
-      </Field>
-
-      <Field label="Quantidade estimada de ovos (opcional)">
-        <Input type="number" min={0} inputMode="numeric" {...register('estimatedEggs')} />
-      </Field>
-
       <Field label="Observações do agente">
         <Textarea
           {...register('observations')}
@@ -279,32 +283,34 @@ export function CollectionFormPage() {
         />
       </Field>
 
-      <Card className="space-y-3">
-        <div className="flex items-center justify-between">
-          <p className="font-semibold">Foto da armadilha / palheta</p>
-          <Button variant="secondary" onClick={() => photoInputRef.current?.click()}>
-            <Camera className="size-4" />
-            Capturar
-          </Button>
-        </div>
-        <input
-          ref={photoInputRef}
-          type="file"
-          accept="image/*"
-          capture="environment"
-          className="hidden"
-          onChange={(event) => onPhotoChange(event.target.files?.[0])}
-        />
-        {preview ? (
-          <img src={preview} alt="Pré-visualização da coleta" className="h-40 w-full rounded-xl object-cover" />
-        ) : (
-          <p className="text-sm text-muted">A foto fica no aparelho e sobe no envio.</p>
-        )}
-      </Card>
+      <div className={cn(isDesktop ? 'grid grid-cols-2 gap-4' : 'space-y-4')}>
+        <Card className="space-y-3">
+          <div className="flex items-center justify-between">
+            <p className="font-semibold">Foto da armadilha / palheta</p>
+            <Button type="button" variant="secondary" onClick={() => photoInputRef.current?.click()}>
+              <Camera className="size-4" />
+              Capturar
+            </Button>
+          </div>
+          <input
+            ref={photoInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={(event) => onPhotoChange(event.target.files?.[0])}
+          />
+          {preview ? (
+            <img src={preview} alt="Pré-visualização da coleta" className="h-40 w-full rounded-xl object-cover" />
+          ) : (
+            <p className="text-sm text-muted">A foto fica no aparelho e sobe no envio.</p>
+          )}
+        </Card>
 
-      <Button type="submit" className="w-full" size="lg" disabled={saving}>
-        {saving ? 'Salvando...' : 'Salvar coleta no aparelho'}
-      </Button>
+        <Button type="submit" className={cn('w-full', isDesktop && 'self-end')} size="lg" disabled={saving}>
+          {saving ? 'Salvando...' : 'Salvar coleta no aparelho'}
+        </Button>
+      </div>
     </form>
   )
 }
