@@ -116,7 +116,10 @@ export async function saveCycleStage(
     }
   } else if (cycle.status === 'trocada') {
     kind = 'recolhimento'
-    trapStatus = values.removeSituation === '0' || values.removeSituation === 'normal' ? 'recolhida' : situationToTrapStatus(values.removeSituation)
+    trapStatus =
+      values.removeSituation === '0' || (values.removeSituation as string) === 'normal'
+        ? 'recolhida'
+        : situationToTrapStatus(values.removeSituation)
     ;({ iso: occurredAt, week } = occurredFromDateInput(values.removeDate))
     cycle = {
       ...cycle,
