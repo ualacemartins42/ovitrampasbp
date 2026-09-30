@@ -76,7 +76,6 @@ export function LoginPage() {
         ) : (
           <p className="text-xs text-muted">
             No primeiro acesso online o app baixa bairros, tipos de armadilha e imóveis para uso em campo.
-            Usuários sem `@` viram `nome.sobrenome@ovitrampas.local`.
           </p>
         )}
       </form>
