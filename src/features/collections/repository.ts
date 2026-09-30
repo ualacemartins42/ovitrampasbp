@@ -127,6 +127,7 @@ export async function saveCollection(profile: Profile, values: CollectionFormVal
       responsible: null,
       block: null,
       areaType: null,
+      estratoLiraa: null,
       latitude: record.latitude,
       longitude: record.longitude,
       syncStatus: 'pending',

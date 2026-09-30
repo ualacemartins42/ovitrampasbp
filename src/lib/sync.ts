@@ -47,6 +47,7 @@ function mapTrap(row: {
   responsible?: string | null
   block?: string | null
   area_type?: Trap['areaType']
+  estrato_liraa?: string | null
   latitude?: number | null
   longitude?: number | null
 }): Trap {
@@ -67,6 +68,7 @@ function mapTrap(row: {
     responsible: row.responsible ?? null,
     block: row.block ?? null,
     areaType: row.area_type ?? null,
+    estratoLiraa: row.estrato_liraa ?? null,
     latitude: row.latitude ?? null,
     longitude: row.longitude ?? null,
     syncStatus: 'synced',
@@ -82,7 +84,6 @@ function mapCycle(row: {
   install_at: string | null
   install_epi_week: number | null
   install_obs: string | null
-  estrato_liraa?: string | null
   swap_at: string | null
   swap_epi_week: number | null
   swap_situation: string | null
@@ -104,7 +105,6 @@ function mapCycle(row: {
     installAt: row.install_at,
     installEpiWeek: row.install_epi_week,
     installObs: row.install_obs,
-    estratoLiraa: row.estrato_liraa ?? null,
     swapAt: row.swap_at,
     swapEpiWeek: row.swap_epi_week,
     swapSituation: normalizeCycleSituation(row.swap_situation),
@@ -389,6 +389,7 @@ async function pushTrap(trapId: string): Promise<void> {
     responsible: trap.responsible,
     block: trap.block,
     area_type: trap.areaType,
+    estrato_liraa: trap.estratoLiraa ?? null,
     latitude: trap.latitude,
     longitude: trap.longitude,
   }
@@ -513,7 +514,6 @@ async function pushCycle(cycleId: string): Promise<void> {
     install_at: cycle.installAt,
     install_epi_week: cycle.installEpiWeek,
     install_obs: cycle.installObs,
-    estrato_liraa: cycle.estratoLiraa,
     swap_at: cycle.swapAt,
     swap_epi_week: cycle.swapEpiWeek,
     swap_situation: normalizeCycleSituation(cycle.swapSituation),

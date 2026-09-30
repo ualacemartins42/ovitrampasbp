@@ -20,14 +20,12 @@ function Stage({
   week,
   situation,
   observations,
-  estratoLiraa,
 }: {
   title: string
   date: string | null
   week: number | null
   situation?: string | null
   observations: string | null
-  estratoLiraa?: string | null
 }) {
   return (
     <section className="rounded-xl border border-line bg-surface p-3">
@@ -35,12 +33,6 @@ function Stage({
       <p className="mt-1 text-sm text-muted">
         {formatDate(date)} · {weekLabel(week)}
       </p>
-      {estratoLiraa ? (
-        <p className="text-sm text-ink">
-          <span className="font-medium">Estrato LIRAa: </span>
-          {estratoLiraa}
-        </p>
-      ) : null}
       {situation ? <p className="text-sm text-ink">{situation}</p> : null}
       {observations ? <p className="mt-1 text-sm text-muted">{observations}</p> : <p className="mt-1 text-xs text-muted">Sem observações.</p>}
     </section>
@@ -84,6 +76,12 @@ export function CicloDetalhesModal({ report, onClose }: CicloDetalhesModalProps)
               {trap.responsible}
             </p>
           ) : null}
+          {trap?.estratoLiraa ? (
+            <p>
+              <span className="font-medium text-ink">Estrato LIRAa: </span>
+              {trap.estratoLiraa}
+            </p>
+          ) : null}
         </div>
 
         {hasGps ? (
@@ -106,7 +104,6 @@ export function CicloDetalhesModal({ report, onClose }: CicloDetalhesModalProps)
             date={cycle.installAt}
             week={cycle.installEpiWeek}
             observations={cycle.installObs}
-            estratoLiraa={cycle.estratoLiraa}
           />
           <Stage
             title="2. Troca de palheta"

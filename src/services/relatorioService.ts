@@ -151,7 +151,6 @@ export async function refreshCompletedCyclesFromRemote(): Promise<void> {
       installAt: row.install_at,
       installEpiWeek: row.install_epi_week,
       installObs: row.install_obs,
-      estratoLiraa: row.estrato_liraa ?? null,
       swapAt: row.swap_at,
       swapEpiWeek: row.swap_epi_week,
       swapSituation: normalizeCycleSituation(row.swap_situation),
@@ -222,7 +221,7 @@ export function downloadCompletedCyclesCsv(rows: CompletedCycleReport[]): void {
     row.street === '—' ? '' : row.street,
     formatDate(row.cycle.installAt),
     weekLabel(row.cycle.installEpiWeek).replace('—', ''),
-    row.cycle.estratoLiraa ?? '',
+    row.trap?.estratoLiraa ?? '',
     formatDate(row.cycle.swapAt),
     weekLabel(row.cycle.swapEpiWeek).replace('—', ''),
     situationLabel(row.cycle.swapSituation).replace('—', ''),
@@ -251,7 +250,7 @@ export function printCompletedCycles(rows: CompletedCycleReport[]): void {
       <tr>
         <td>${row.cycle.trapCode}</td>
         <td>${row.neighborhood}</td>
-        <td>${formatDate(row.cycle.installAt)} (SE ${weekLabel(row.cycle.installEpiWeek)})${row.cycle.estratoLiraa ? ` · Estrato ${row.cycle.estratoLiraa}` : ''}</td>
+        <td>${formatDate(row.cycle.installAt)} (SE ${weekLabel(row.cycle.installEpiWeek)})${row.trap?.estratoLiraa ? ` · Estrato ${row.trap.estratoLiraa}` : ''}</td>
         <td>${formatDate(row.cycle.swapAt)} (SE ${weekLabel(row.cycle.swapEpiWeek)}) · ${situationLabel(row.cycle.swapSituation)}</td>
         <td>${formatDate(row.cycle.removeAt)} (SE ${weekLabel(row.cycle.removeEpiWeek)}) · ${situationLabel(row.cycle.removeSituation)}</td>
         <td>${row.agentName}</td>

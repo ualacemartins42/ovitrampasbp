@@ -87,6 +87,7 @@ export interface Trap {
   responsible: string | null
   block: string | null
   areaType: TrapAreaType | null
+  estratoLiraa: string | null
   latitude: number | null
   longitude: number | null
   syncStatus?: LocalSyncStatus
@@ -102,7 +103,6 @@ export interface CycleRecord {
   installAt: string | null
   installEpiWeek: number | null
   installObs: string | null
-  estratoLiraa: string | null
   swapAt: string | null
   swapEpiWeek: number | null
   swapSituation: CycleSituation | null

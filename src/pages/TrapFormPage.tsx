@@ -27,6 +27,7 @@ const emptyForm: TrapFormValues = {
   responsible: '',
   block: '',
   areaType: 'urbana',
+  estratoLiraa: '',
   latitude: '',
   longitude: '',
 }
@@ -70,6 +71,7 @@ export function TrapFormPage() {
           responsible: trap.responsible ?? '',
           block: trap.block ?? '',
           areaType: trap.areaType ?? 'urbana',
+          estratoLiraa: trap.estratoLiraa ?? '',
           latitude: trap.latitude != null ? String(trap.latitude) : '',
           longitude: trap.longitude != null ? String(trap.longitude) : '',
         })
@@ -178,6 +180,13 @@ export function TrapFormPage() {
         </Field>
         <Field label="Quarteirão">
           <Input value={values.block} onChange={(event) => patch('block', event.target.value)} />
+        </Field>
+        <Field label="Estrato LIRAa">
+          <Input
+            inputMode="numeric"
+            value={values.estratoLiraa}
+            onChange={(event) => patch('estratoLiraa', event.target.value)}
+          />
         </Field>
 
         <Field label="Tipo da ovitrampa">

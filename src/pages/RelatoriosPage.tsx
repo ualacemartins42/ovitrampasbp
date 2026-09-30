@@ -194,8 +194,8 @@ export function RelatoriosPage() {
                     <dt>Instalação</dt>
                     <dd className="text-ink">
                       {formatDate(row.cycle.installAt)} · {weekLabel(row.cycle.installEpiWeek)}
-                      {row.cycle.estratoLiraa ? (
-                        <span className="block">Estrato LIRAa: {row.cycle.estratoLiraa}</span>
+                      {row.trap?.estratoLiraa ? (
+                        <span className="block">Estrato LIRAa: {row.trap.estratoLiraa}</span>
                       ) : null}
                     </dd>
                   </div>

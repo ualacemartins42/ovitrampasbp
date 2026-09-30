@@ -1,5 +1,6 @@
 import Dexie, { type EntityTable } from 'dexie'
 import { BAIRROS_CATALOG_VERSION, BARRA_DO_PIRAI_BAIRROS } from '@/constants/bairros'
+import { createId, nowIso } from '@/lib/utils'
 import type { EducacaoSaudeRecord } from '@/types/educacao'
 import type {
   CollectionRecord,
@@ -60,6 +61,44 @@ class OvitrampasDatabase extends Dexie {
     this.version(5).stores({
       educacaoSaude: 'id, trapCode, agentId, syncStatus, actionDate, createdAt',
     })
+    this.version(6)
+      .stores({})
+      .upgrade(async (tx) => {
+        const cycles = (await tx.table('cycles').orderBy('createdAt').toArray()) as Array<
+          CycleRecord & { estratoLiraa?: string | null }
+        >
+        const latestByTrap = new Map<string, { value: string; synced: boolean }>()
+        for (const cycle of cycles) {
+          const value = cycle.estratoLiraa?.trim()
+          if (value) latestByTrap.set(cycle.trapCode, { value, synced: cycle.syncStatus === 'synced' })
+        }
+
+        const traps = tx.table('traps')
+        const queue = tx.table('syncQueue')
+        for (const [trapCode, { value, synced }] of latestByTrap) {
+          const trap = (await traps.where('code').equals(trapCode).first()) as Trap | undefined
+          if (!trap || trap.estratoLiraa?.trim()) continue
+          await traps.update(trap.id, { estratoLiraa: value, ...(synced ? {} : { syncStatus: 'pending' }) })
+          if (!synced) {
+            await queue.add({
+              id: createId(),
+              type: 'trap',
+              payloadId: String(trap.id),
+              createdAt: nowIso(),
+              attempts: 0,
+              lastError: null,
+              status: 'pending',
+            })
+          }
+        }
+
+        await tx
+          .table('cycles')
+          .toCollection()
+          .modify((cycle: Record<string, unknown>) => {
+            delete cycle.estratoLiraa
+          })
+      })
   }
 }
 

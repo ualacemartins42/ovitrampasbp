@@ -162,6 +162,7 @@ export interface Database {
           responsible: string | null
           block: string | null
           area_type: 'urbana' | 'periurbana' | 'rural' | null
+          estrato_liraa: string | null
           latitude: number | null
           longitude: number | null
           created_by: string | null
@@ -185,6 +186,7 @@ export interface Database {
           responsible?: string | null
           block?: string | null
           area_type?: 'urbana' | 'periurbana' | 'rural' | null
+          estrato_liraa?: string | null
           latitude?: number | null
           longitude?: number | null
           created_by?: string | null

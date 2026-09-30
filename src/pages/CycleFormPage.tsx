@@ -82,7 +82,6 @@ export function CycleFormPage() {
   const [neighborhoodName, setNeighborhoodName] = useState('')
   const [installObs, setInstallObs] = useState('')
   const [showInstallObs, setShowInstallObs] = useState(false)
-  const [estratoLiraa, setEstratoLiraa] = useState('')
   const [installDate, setInstallDate] = useState(() => toDateInputValue(new Date()))
   const [swapDate, setSwapDate] = useState(() => addDaysToDateInput(toDateInputValue(new Date()), 6))
   const [swapSituation, setSwapSituation] = useState<CycleSituation | ''>('')
@@ -118,7 +117,6 @@ export function CycleFormPage() {
       setInstallDate(isoToDateInput(row.installAt))
       setInstallObs(row.installObs ?? '')
       setShowInstallObs(Boolean(row.installObs?.trim()))
-      setEstratoLiraa(row.estratoLiraa ?? '')
       const nextSwapDate = row.swapAt
         ? isoToDateInput(row.swapAt)
         : addDaysToDateInput(isoToDateInput(row.installAt), 6)
@@ -203,7 +201,6 @@ export function CycleFormPage() {
         neighborhoodName,
         installDate,
         installObs: showInstallObs ? installObs : '',
-        estratoLiraa,
         swapDate,
         swapSituation,
         swapObs: showSwapObs ? swapObs : '',
@@ -295,15 +292,6 @@ export function CycleFormPage() {
           onOpenChange={setShowInstallObs}
           readOnly={!isNew}
         />
-        <Field label="Estrato LIRAa">
-          <Input
-            readOnly={!isNew}
-            className={isNew ? undefined : 'bg-surface'}
-            value={estratoLiraa}
-            inputMode="numeric"
-            onChange={(event) => setEstratoLiraa(event.target.value)}
-          />
-        </Field>
       </Card>
 
       {registeringSwap || registeringRemove || cycle?.swapAt ? (

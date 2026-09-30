@@ -13,6 +13,7 @@ export interface TrapFormValues {
   responsible: string
   block: string
   areaType: TrapAreaType
+  estratoLiraa: string
   latitude: string
   longitude: string
 }
@@ -47,6 +48,7 @@ export function mapTrapDefaults(row: Partial<Trap> = {}): Trap {
     responsible: row.responsible ?? null,
     block: row.block ?? null,
     areaType: row.areaType ?? null,
+    estratoLiraa: row.estratoLiraa ?? null,
     latitude: row.latitude ?? null,
     longitude: row.longitude ?? null,
     syncStatus: row.syncStatus ?? 'pending',
@@ -83,6 +85,7 @@ export async function saveTrap(values: TrapFormValues, existing?: Trap | null): 
     responsible: emptyToNull(values.responsible),
     block: emptyToNull(values.block),
     areaType: values.areaType,
+    estratoLiraa: emptyToNull(values.estratoLiraa),
     latitude: parseOptionalCoordinate(values.latitude, 'latitude'),
     longitude: parseOptionalCoordinate(values.longitude, 'longitude'),
     status: existing?.status ?? 'instalada',
