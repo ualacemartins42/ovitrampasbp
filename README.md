@@ -100,3 +100,5 @@ Funções `security definer` estão no schema `private`, fora da Data API.
 2. Em **Settings → Environment Variables**, defina `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` para Production (e Preview, se quiser). Elas entram no bundle no momento do `npm run build`.
 3. O `vercel.json` reescreve todas as rotas do SPA para `index.html` (`/login`, `/relatorios`, `/admin/bairros`, etc.) e configura cache do service worker / manifesto PWA.
 4. Publique e, no celular, abra o site, use **Adicionar à tela inicial**, faça o login ainda com sinal e siga para o campo.
+
+# ADICIONEI ESSA LINHA (LINHA 104)
