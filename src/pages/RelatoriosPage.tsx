@@ -3,6 +3,7 @@ import { Download, FileBarChart, Printer, Search } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { CicloDetalhesModal } from '@/components/relatorios/CicloDetalhesModal'
+import { EducacaoSaudeRelatorio } from '@/components/relatorios/EducacaoSaudeRelatorio'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Field, Input, Select } from '@/components/ui/field'
@@ -40,6 +41,7 @@ export function RelatoriosPage() {
   const [filters, setFilters] = useState<ReportFilters>(EMPTY_REPORT_FILTERS)
   const [selected, setSelected] = useState<CompletedCycleReport | null>(null)
   const [loading, setLoading] = useState(true)
+  const [tab, setTab] = useState<'ciclos' | 'educacao'>('ciclos')
 
   useEffect(() => {
     const sub = liveQuery(() => listCompletedCycleReports(profile)).subscribe({
@@ -82,146 +84,177 @@ export function RelatoriosPage() {
       <div>
         <h1 className="text-xl font-semibold">Relatórios</h1>
         <p className="text-sm text-muted">
-          Ciclos concluídos (instalação, troca e retirada), disponíveis offline neste aparelho.
+          {tab === 'ciclos'
+            ? 'Ciclos concluídos (instalação, troca e retirada), disponíveis offline neste aparelho.'
+            : 'Ações de Educação em Saúde registradas, disponíveis offline neste aparelho.'}
         </p>
       </div>
 
-      <div className="relative">
-        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted" />
-        <Input
-          className="pl-9"
-          value={filters.query}
-          placeholder="Buscar código, rua ou agente"
-          onChange={(event) => updateFilter('query', event.target.value)}
-        />
+      <div role="tablist" className="grid grid-cols-2 gap-1 rounded-xl border border-line bg-surface p-1">
+        {(
+          [
+            ['ciclos', 'Ciclos concluídos'],
+            ['educacao', 'Educação em Saúde'],
+          ] as const
+        ).map(([value, label]) => (
+          <button
+            key={value}
+            type="button"
+            role="tab"
+            aria-selected={tab === value}
+            className={cn(
+              'rounded-lg px-3 py-2 text-sm font-semibold transition',
+              tab === value ? 'bg-white text-primary shadow-sm' : 'text-muted hover:text-ink',
+            )}
+            onClick={() => setTab(value)}
+          >
+            {label}
+          </button>
+        ))}
       </div>
 
-      <div className={cn('grid gap-2', isDesktop ? 'grid-cols-2 xl:grid-cols-4' : 'grid-cols-1')}>
-        <Field label="Bairro / distrito">
-          <Select value={filters.neighborhood} onChange={(event) => updateFilter('neighborhood', event.target.value)}>
-            <option value="">Todos</option>
-            {neighborhoods.map((item) => (
-              <option key={item.id} value={item.name}>
-                {formatNeighborhoodLabel(item)}
-              </option>
-            ))}
-            {neighborhoodOptions
-              .filter((name) => !neighborhoods.some((item) => item.name === name))
-              .map((name) => (
-                <option key={name} value={name}>
-                  {name}
+      {tab === 'educacao' ? (
+        <EducacaoSaudeRelatorio />
+      ) : (
+        <>
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted" />
+          <Input
+            className="pl-9"
+            value={filters.query}
+            placeholder="Buscar código, rua ou agente"
+            onChange={(event) => updateFilter('query', event.target.value)}
+          />
+        </div>
+
+        <div className={cn('grid gap-2', isDesktop ? 'grid-cols-2 xl:grid-cols-4' : 'grid-cols-1')}>
+          <Field label="Bairro / distrito">
+            <Select value={filters.neighborhood} onChange={(event) => updateFilter('neighborhood', event.target.value)}>
+              <option value="">Todos</option>
+              {neighborhoods.map((item) => (
+                <option key={item.id} value={item.name}>
+                  {formatNeighborhoodLabel(item)}
                 </option>
               ))}
-          </Select>
-        </Field>
-        <div className="grid grid-cols-2 gap-2">
-          <Field label="Retirada de">
-            <Input type="date" value={filters.dateFrom} onChange={(event) => updateFilter('dateFrom', event.target.value)} />
+              {neighborhoodOptions
+                .filter((name) => !neighborhoods.some((item) => item.name === name))
+                .map((name) => (
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
+                ))}
+            </Select>
           </Field>
-          <Field label="Retirada até">
-            <Input type="date" value={filters.dateTo} onChange={(event) => updateFilter('dateTo', event.target.value)} />
-          </Field>
+          <div className="grid grid-cols-2 gap-2">
+            <Field label="Retirada de">
+              <Input type="date" value={filters.dateFrom} onChange={(event) => updateFilter('dateFrom', event.target.value)} />
+            </Field>
+            <Field label="Retirada até">
+              <Input type="date" value={filters.dateTo} onChange={(event) => updateFilter('dateTo', event.target.value)} />
+            </Field>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <Field label="SE de">
+              <Input
+                type="number"
+                min={1}
+                inputMode="numeric"
+                placeholder="ex. 38"
+                value={filters.weekFrom}
+                onChange={(event) => updateFilter('weekFrom', event.target.value)}
+              />
+            </Field>
+            <Field label="SE até">
+              <Input
+                type="number"
+                min={1}
+                inputMode="numeric"
+                placeholder="ex. 40"
+                value={filters.weekTo}
+                onChange={(event) => updateFilter('weekTo', event.target.value)}
+              />
+            </Field>
+          </div>
         </div>
-        <div className="grid grid-cols-2 gap-2">
-          <Field label="SE de">
-            <Input
-              type="number"
-              min={1}
-              inputMode="numeric"
-              placeholder="ex. 38"
-              value={filters.weekFrom}
-              onChange={(event) => updateFilter('weekFrom', event.target.value)}
-            />
-          </Field>
-          <Field label="SE até">
-            <Input
-              type="number"
-              min={1}
-              inputMode="numeric"
-              placeholder="ex. 40"
-              value={filters.weekTo}
-              onChange={(event) => updateFilter('weekTo', event.target.value)}
-            />
-          </Field>
+
+        <div className="flex gap-2">
+          <Button
+            className="flex-1"
+            variant="secondary"
+            disabled={filtered.length === 0}
+            onClick={() => downloadCompletedCyclesCsv(filtered)}
+          >
+            <Download className="size-4" />
+            Exportar CSV
+          </Button>
+          <Button
+            className="flex-1"
+            variant="secondary"
+            disabled={filtered.length === 0}
+            onClick={() => printCompletedCycles(filtered)}
+          >
+            <Printer className="size-4" />
+            Imprimir
+          </Button>
         </div>
-      </div>
 
-      <div className="flex gap-2">
-        <Button
-          className="flex-1"
-          variant="secondary"
-          disabled={filtered.length === 0}
-          onClick={() => downloadCompletedCyclesCsv(filtered)}
-        >
-          <Download className="size-4" />
-          Exportar CSV
-        </Button>
-        <Button
-          className="flex-1"
-          variant="secondary"
-          disabled={filtered.length === 0}
-          onClick={() => printCompletedCycles(filtered)}
-        >
-          <Printer className="size-4" />
-          Imprimir
-        </Button>
-      </div>
+        <p className="text-xs text-muted">{filtered.length} ciclo(s) concluído(s) no filtro atual.</p>
 
-      <p className="text-xs text-muted">{filtered.length} ciclo(s) concluído(s) no filtro atual.</p>
-
-      {loading ? (
-        <Card className="text-sm text-muted">Carregando ciclos concluídos...</Card>
-      ) : filtered.length === 0 ? (
-        <Card className="text-sm text-muted">Nenhum ciclo com as três etapas concluídas foi encontrado.</Card>
-      ) : (
-        <div
-          className={cn(
-            isDesktop ? 'grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3' : 'space-y-3',
-          )}
-        >
-          {filtered.map((row) => (
-            <button key={row.cycle.id} type="button" className="block w-full text-left" onClick={() => setSelected(row)}>
-              <Card className="h-full space-y-2 transition hover:border-primary/40">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <p className="font-semibold text-ink">Ovitrampa {row.cycle.trapCode}</p>
-                    <p className="text-xs text-muted">{row.neighborhood}</p>
+        {loading ? (
+          <Card className="text-sm text-muted">Carregando ciclos concluídos...</Card>
+        ) : filtered.length === 0 ? (
+          <Card className="text-sm text-muted">Nenhum ciclo com as três etapas concluídas foi encontrado.</Card>
+        ) : (
+          <div
+            className={cn(
+              isDesktop ? 'grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3' : 'space-y-3',
+            )}
+          >
+            {filtered.map((row) => (
+              <button key={row.cycle.id} type="button" className="block w-full text-left" onClick={() => setSelected(row)}>
+                <Card className="h-full space-y-2 transition hover:border-primary/40">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="font-semibold text-ink">Ovitrampa {row.cycle.trapCode}</p>
+                      <p className="text-xs text-muted">{row.neighborhood}</p>
+                    </div>
+                    <FileBarChart className="size-4 shrink-0 text-primary" />
                   </div>
-                  <FileBarChart className="size-4 shrink-0 text-primary" />
-                </div>
-                <dl className="grid grid-cols-1 gap-1 text-xs text-muted">
-                  <div className="flex justify-between gap-3">
-                    <dt>Instalação</dt>
-                    <dd className="text-ink">
-                      {formatDate(row.cycle.installAt)} · {weekLabel(row.cycle.installEpiWeek)}
-                      {row.trap?.estratoLiraa ? (
-                        <span className="block">Estrato LIRAa: {row.trap.estratoLiraa}</span>
-                      ) : null}
-                    </dd>
-                  </div>
-                  <div className="flex justify-between gap-3">
-                    <dt>Troca</dt>
-                    <dd className="text-right text-ink">
-                      {formatDate(row.cycle.swapAt)} · {weekLabel(row.cycle.swapEpiWeek)}
-                      <span className="block">{situationLabel(row.cycle.swapSituation)}</span>
-                    </dd>
-                  </div>
-                  <div className="flex justify-between gap-3">
-                    <dt>Retirada</dt>
-                    <dd className="text-right text-ink">
-                      {formatDate(row.cycle.removeAt)} · {weekLabel(row.cycle.removeEpiWeek)}
-                      <span className="block">{situationLabel(row.cycle.removeSituation)}</span>
-                    </dd>
-                  </div>
-                  <div className="flex justify-between gap-3">
-                    <dt>Agente</dt>
-                    <dd className="text-ink">{row.agentName}</dd>
-                  </div>
-                </dl>
-              </Card>
-            </button>
-          ))}
-        </div>
+                  <dl className="grid grid-cols-1 gap-1 text-xs text-muted">
+                    <div className="flex justify-between gap-3">
+                      <dt>Instalação</dt>
+                      <dd className="text-ink">
+                        {formatDate(row.cycle.installAt)} · {weekLabel(row.cycle.installEpiWeek)}
+                        {row.trap?.estratoLiraa ? (
+                          <span className="block">Estrato LIRAa: {row.trap.estratoLiraa}</span>
+                        ) : null}
+                      </dd>
+                    </div>
+                    <div className="flex justify-between gap-3">
+                      <dt>Troca</dt>
+                      <dd className="text-right text-ink">
+                        {formatDate(row.cycle.swapAt)} · {weekLabel(row.cycle.swapEpiWeek)}
+                        <span className="block">{situationLabel(row.cycle.swapSituation)}</span>
+                      </dd>
+                    </div>
+                    <div className="flex justify-between gap-3">
+                      <dt>Retirada</dt>
+                      <dd className="text-right text-ink">
+                        {formatDate(row.cycle.removeAt)} · {weekLabel(row.cycle.removeEpiWeek)}
+                        <span className="block">{situationLabel(row.cycle.removeSituation)}</span>
+                      </dd>
+                    </div>
+                    <div className="flex justify-between gap-3">
+                      <dt>Agente</dt>
+                      <dd className="text-ink">{row.agentName}</dd>
+                    </div>
+                  </dl>
+                </Card>
+              </button>
+            ))}
+          </div>
+        )}
+        </>
       )}
 
       <CicloDetalhesModal report={selected} onClose={() => setSelected(null)} />

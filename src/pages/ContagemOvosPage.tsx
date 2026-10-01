@@ -104,6 +104,7 @@ export function ContagemOvosPage() {
           neighborhoodName: selectedBairro || relatedCycle?.neighborhoodName || null,
           district: selectedDistrito || null,
         },
+        'contagem',
       )
       toast.success('Contagem salva neste aparelho.')
       navigate('/')

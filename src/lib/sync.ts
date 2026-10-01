@@ -424,8 +424,12 @@ async function pushEducacaoSaude(recordId: string): Promise<void> {
   if (!supabase) throw new Error('Supabase não configurado')
   const record = await db.educacaoSaude.get(recordId)
   if (!record) {
+    const { data: remote } = await supabase.from('educacao_saude').select('photo_paths').eq('id', recordId).maybeSingle()
     const { error } = await supabase.from('educacao_saude').delete().eq('id', recordId)
     if (error) throw error
+    if (remote?.photo_paths?.length) {
+      await supabase.storage.from('educacao_fotos').remove(remote.photo_paths)
+    }
     return
   }
 
@@ -449,6 +453,7 @@ async function pushEducacaoSaude(recordId: string): Promise<void> {
     egg_count: record.eggCount,
     cycle_id: record.cycleId,
     photo_paths: photoPaths,
+    record_type: record.kind,
     agent_id: record.agentId,
     updated_at: nowIso(),
   })
@@ -468,13 +473,20 @@ async function pullEducacaoSaude(agentId: string, allAgents: boolean): Promise<v
   const { data, error } = await query
   if (error) throw error
 
-  const local = await db.educacaoSaude.toArray()
-  const pending = new Set(local.filter((item) => item.syncStatus !== 'synced').map((item) => item.id))
+  const [local, queued] = await Promise.all([
+    db.educacaoSaude.toArray(),
+    db.syncQueue.where('type').equals('educacao_saude').toArray(),
+  ])
+  const pending = new Set([
+    ...local.filter((item) => item.syncStatus !== 'synced').map((item) => item.id),
+    ...queued.map((item) => item.payloadId),
+  ])
 
   for (const row of data ?? []) {
     if (pending.has(row.id)) continue
     const mapped: EducacaoSaudeRecord = {
       id: row.id,
+      kind: row.record_type ?? (row.egg_count != null ? 'contagem' : 'educacao'),
       trapCode: row.trap_code,
       trapId: row.trap_id,
       cycleId: row.cycle_id ?? null,
@@ -602,7 +614,8 @@ export async function processSyncQueue(
       }
       if (item.type === 'educacao_saude') {
         const record = await db.educacaoSaude.get(item.payloadId)
-        if (options.agentId && record && record.agentId !== options.agentId) {
+        const ownerId = item.actorId ?? record?.agentId
+        if (options.agentId && ownerId && ownerId !== options.agentId) {
           continue
         }
       }

@@ -99,6 +99,18 @@ class OvitrampasDatabase extends Dexie {
             delete cycle.estratoLiraa
           })
       })
+    this.version(7)
+      .stores({
+        educacaoSaude: 'id, kind, trapCode, agentId, syncStatus, actionDate, createdAt',
+      })
+      .upgrade(async (tx) => {
+        await tx
+          .table('educacaoSaude')
+          .toCollection()
+          .modify((record: EducacaoSaudeRecord) => {
+            if (!record.kind) record.kind = record.eggCount != null ? 'contagem' : 'educacao'
+          })
+      })
   }
 }
 
@@ -109,6 +121,7 @@ export async function enqueueSync(item: Omit<SyncQueueItem, 'attempts' | 'lastEr
   if (existing) {
     await db.syncQueue.update(existing.id, {
       createdAt: item.createdAt,
+      ...(item.actorId ? { actorId: item.actorId } : {}),
       status: 'pending',
       lastError: null,
     })

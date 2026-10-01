@@ -1,7 +1,11 @@
 import type { LocalSyncStatus } from '@/types/domain'
 
+export type EducacaoSaudeKind = 'educacao' | 'contagem'
+
 export interface EducacaoSaudeRecord {
   id: string
+  /** Ação educativa ou contagem de ovos (coluna record_type). */
+  kind: EducacaoSaudeKind
   trapCode: string
   trapId: number | null
   cycleId: string | null
@@ -27,4 +31,11 @@ export interface EducacaoSaudeFormValues {
   analysisDate: string
   eggCount: string
   observation: string
+}
+
+/** Foto já gravada em um registro: local (IndexedDB), remota (Storage) ou ambas. */
+export interface EducacaoPhotoRef {
+  key: string
+  localId: string | null
+  remotePath: string | null
 }

@@ -338,6 +338,7 @@ export interface Database {
           egg_count: number | null
           cycle_id: string | null
           photo_paths: string[]
+          record_type: 'educacao' | 'contagem'
           agent_id: string
           created_at: string
           updated_at: string
@@ -355,6 +356,7 @@ export interface Database {
           egg_count?: number | null
           cycle_id?: string | null
           photo_paths?: string[]
+          record_type?: 'educacao' | 'contagem'
           agent_id: string
           created_at?: string
           updated_at?: string

@@ -162,6 +162,8 @@ export interface SyncQueueItem {
   id: string
   type: SyncQueueType
   payloadId: string
+  /** Usuário que fez a alteração, quando diferente do dono do registro. */
+  actorId?: string
   createdAt: string
   attempts: number
   lastError: string | null
